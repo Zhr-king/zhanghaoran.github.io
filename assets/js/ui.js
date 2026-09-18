@@ -296,6 +296,33 @@
   document.querySelectorAll('section[id], footer[id]').forEach((s) => secIO.observe(s));
 
   /* ----------------------------------------------------------
+     七点五、主题切换（右上角：蓝白科幻风 ⇄ 夜色）
+     ---------------------------------------------------------- */
+  const themeToggle = document.getElementById('themeToggle');
+  const themeLabel = document.getElementById('themeLabel');
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+
+  function applyTheme(t, persist) {
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme');
+    if (themeLabel) themeLabel.textContent = t === 'light' ? '蓝白' : '夜色';
+    themeToggle?.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    if (themeMeta) themeMeta.setAttribute('content', t === 'light' ? '#eef4fd' : '#050a18');
+    if (persist) {
+      try { localStorage.setItem('forgeos:theme', t); } catch (e) { /* ignore */ }
+    }
+  }
+
+  applyTheme(currentTheme(), false);
+  themeToggle?.addEventListener('click', () => {
+    applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+  });
+
+  /* ----------------------------------------------------------
      八、Toast 提示
      ---------------------------------------------------------- */
   const toastRoot = document.getElementById('toastRoot');
