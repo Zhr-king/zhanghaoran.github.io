@@ -47,6 +47,7 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: calc(var(--nav-h) + 16px);
   color-scheme: dark;
+  font-family: var(--font-sans);
 }
 
 body {
