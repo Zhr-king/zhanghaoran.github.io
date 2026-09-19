@@ -24,9 +24,9 @@
   --text-dim: #8ea4c8;
   --text-faint: #5b7196;
   --ok: #34d399;
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
-  --font-mono: "Cascadia Code", "JetBrains Mono", Consolas, "SF Mono", "Courier New", monospace;
-  --font-btn: Calibri, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --font-sans: Calibri, Carlito, "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  --font-mono: Calibri, Carlito, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  --font-btn: Calibri, Carlito, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
   /* 可被主题翻转的语义色 */
   --ink-soft: #bfe0ff;
   --ink-strong: #cfe4ff;
@@ -286,10 +286,10 @@ html.no-boot #boot { display: none; }
   display: flex; align-items: center; gap: 36px;
 }
 .brand { display: flex; align-items: center; gap: 10px; }
-.brand svg { width: 30px; height: 30px; filter: drop-shadow(0 0 8px rgba(59, 130, 246, .6)); }
+.brand svg { width: 34px; height: 34px; filter: drop-shadow(0 0 8px rgba(59, 130, 246, .6)); }
 .brand-text {
   font-family: var(--font-mono);
-  font-size: 16px; font-weight: 700; letter-spacing: .18em;
+  font-size: 17px; font-weight: 700; letter-spacing: .18em;
   color: var(--ice);
 }
 .brand-text em { font-style: normal; color: var(--sky); }
@@ -335,20 +335,6 @@ html.no-boot #boot { display: none; }
 }
 .status-dot.cyan { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-
-.nav-toggle {
-  display: none;
-  width: 40px; height: 40px;
-  border: 1px solid var(--line);
-  clip-path: polygon(0 8px, 8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
-}
-.nav-toggle span {
-  display: block;
-  width: 18px; height: 2px;
-  margin: 3px auto;
-  background: var(--sky);
-  transition: .3s;
-}
 
 /* 主题切换键（右上角：蓝白科幻 ⇄ 夜色） */
 .theme-toggle {
@@ -943,23 +929,11 @@ body.ready .float-chip { animation: fadeIn .9s .8s both; }
 }
 
 @media (max-width: 860px) {
-  .nav-links {
-    position: fixed;
-    top: var(--nav-h); left: 0; right: 0;
-    flex-direction: column; gap: 0;
-    padding: 10px 24px 18px;
-    background: var(--nav-bg-scrolled);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
-    transform: translateY(-12px);
-    opacity: 0; visibility: hidden;
-    transition: .3s;
-  }
-  .nav-links.open { transform: none; opacity: 1; visibility: visible; }
-  .nav-link { padding: 13px 2px; border-bottom: 1px dashed rgba(96, 165, 250, .14); }
-  .nav-toggle { display: block; }
+  /* 导航保持一排常显（不做折叠菜单），只做紧凑适配 */
+  .nav-inner { gap: 18px; padding: 0 18px; }
+  .nav-links { gap: 16px; }
+  .nav-link { font-size: 12px; letter-spacing: .08em; }
   .status-chip { display: none; }
-  .nav-right { margin-left: auto; }
   .hero-rings .ring.ticks, .hero-rings .ring-sweep { display: none; }
   .ring.dashed { width: 340px; height: 340px; }
   .hero { padding-bottom: 70px; }
@@ -983,7 +957,11 @@ html[data-theme="light"] {
   --bg-1: #e9f1fb;
   --bg-2: #e2ecf9;
   --panel: rgba(255, 255, 255, .7);
-  --line: rgba(37, 99, 235, .14);
+  -nav-inner { gap: 10px; padding: 0 12px; }
+  .brand-text { display: none; } /* 只留 logo，保证导航一排不换行 */
+  .nav-links { gap: 9px; }
+  .nav-link { font-size: 11.5px; letter-spacing: .02em; }
+  .-line: rgba(37, 99, 235, .14);
   --line-strong: rgba(37, 99, 235, .38);
   --ice: #0d2a5e;
   --text: #24395f;
@@ -1034,8 +1012,7 @@ html[data-theme="light"] .hero::after {
 /* 玻璃形态：去掉机甲切角，改为圆角玻璃 */
 html[data-theme="light"] .kicker,
 html[data-theme="light"] .fc-body,
-html[data-theme="light"] .theme-toggle,
-html[data-theme="light"] .btn-ghost,
+html[data-theme="light"] .theme-toggl
 html[data-theme="light"] .btn-mini,
 html[data-theme="light"] .icon-box,
 html[data-theme="light"] .status-chip,
@@ -1153,7 +1130,6 @@ html[data-theme="light"] .cursor-ring.hot { border-color: #2563eb; background: r
 
 /* 导航 / 文字细节 */
 html[data-theme="light"] .nav-toggle span { background: #2563eb; }
-html[data-theme="light"] .tt-track { border-color: rgba(37, 99, 235, .4); background: rgba(37, 99, 235, .16); }
 html[data-theme="light"] .brand-text em { color: #2563eb; }
 html[data-theme="light"] .nav-link:hover,
 html[data-theme="light"] .nav-link.active { text-shadow: 0 0 14px rgba(37, 99, 235, .45); }

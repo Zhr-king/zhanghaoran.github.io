@@ -261,27 +261,13 @@
   }
 
   /* ----------------------------------------------------------
-     七、导航栏
+     七、导航栏（一排常显，无折叠菜单）
      ---------------------------------------------------------- */
   const nav = document.getElementById('navbar');
-  const navLinks = document.getElementById('navLinks');
-  const navToggle = document.getElementById('navToggle');
 
   window.addEventListener('scroll', () => {
     if (nav) nav.classList.toggle('scrolled', window.scrollY > 8);
   }, { passive: true });
-
-  navToggle?.addEventListener('click', () => {
-    const open = navLinks.classList.toggle('open');
-    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  navLinks?.addEventListener('click', (e) => {
-    if (e.target.closest('a')) {
-      navLinks.classList.remove('open');
-      navToggle?.setAttribute('aria-expanded', 'false');
-    }
-  });
 
   /* 高亮当前章节 */
   const navMap = {};
