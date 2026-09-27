@@ -342,17 +342,32 @@
     setMenuOpen(false);
   });
 
-  /* 高亮当前章节 */
-  const navMap = {};
-  document.querySelectorAll('.nav-link[data-nav]').forEach((a) => { navMap[a.dataset.nav] = a; });
-  const secIO = CAN_OBSERVE ? new IntersectionObserver((entries) => {
-    entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      document.querySelectorAll('.nav-link.active').forEach((a) => a.classList.remove('active'));
-      navMap[en.target.id]?.classList.add('active');
+  /* 用实际视口位置高亮章节，避免百分比 rootMargin 在宽屏上形成空观察区。 */
+  const sectionLinks = Array.from(document.querySelectorAll('.nav-link[data-nav]'));
+  const sections = sectionLinks.map(link => document.getElementById(link.dataset.nav)).filter(Boolean);
+  let sectionFrame = 0;
+  function updateActiveSection() {
+    sectionFrame = 0;
+    let active = sections[0];
+    const marker = Math.max((nav?.getBoundingClientRect().height || 64) + 24, window.innerHeight * .3);
+    sections.forEach(section => {
+      if (section.getBoundingClientRect().top <= marker) active = section;
     });
-  }, { rootMargin: '-42% 0px -52% 0px' }) : null;
-  document.querySelectorAll('section[id], footer[id]').forEach((s) => secIO?.observe(s));
+    if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) active = sections.at(-1);
+    sectionLinks.forEach(link => {
+      const selected = link.dataset.nav === active?.id;
+      link.classList.toggle('active', selected);
+      if (selected) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  }
+  function scheduleSectionUpdate() {
+    if (!sectionFrame) sectionFrame = requestAnimationFrame(updateActiveSection);
+  }
+  window.addEventListener('scroll', scheduleSectionUpdate, { passive: true });
+  window.addEventListener('resize', scheduleSectionUpdate);
+  document.addEventListener('forgeos:languagechange', scheduleSectionUpdate);
+  updateActiveSection();
 
   /* ----------------------------------------------------------
      七点五、主题切换（右上角：蓝白科幻风 ⇄ 夜色）

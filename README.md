@@ -1,7 +1,7 @@
 # zhanghaoran.github.io
 ForgeOS project
 
-导航栏的 `English ENG / 中文 CN` 按钮可切换语言，浏览器会记住选择。语言和主题分别保存，原有动画与特效保持不变。
+导航栏的 `CN / ENG` 按钮显示当前语言，点击后切换；浏览器会记住选择。语言和主题分别保存，原有动画与特效保持不变。
 
 静态内容的英文译文放在 `index.html` 的 `data-i18n-en` 等属性中；动态提示、打字机和终端文案由 `assets/js/i18n.js` 管理。
 

@@ -72,6 +72,20 @@ async function connect(url) {
       return result.result.value;
     };
     const baseUrl = 'http://127.0.0.1:' + server.address().port;
+    const reloadPage = async () => {
+      await evaluate('window.__testReloadPending = true');
+      await cdp.send('Page.reload');
+      for (let attempt = 0; attempt < 100; attempt++) {
+        try {
+          if (await evaluate('!window.__testReloadPending && document.readyState === "complete"')) return;
+        } catch (error) {
+          // The previous execution context can disappear while navigation commits.
+          if (!/context|navigat/i.test(error.message)) throw error;
+        }
+        await sleep(100);
+      }
+      throw new Error('Reload did not complete');
+    };
     if (process.argv.includes('--render-social')) {
       await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 630, deviceScaleFactor: 1, mobile: false });
       await cdp.send('Page.navigate', { url: baseUrl + '/assets/images/social-card.svg' });
@@ -91,8 +105,76 @@ async function connect(url) {
     }
     assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
     const click = id => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
+    if (process.argv.includes('--screenshots')) {
+      const output = path.join(os.tmpdir(), 'forgeos-layout-review');
+      fs.mkdirSync(output, { recursive: true });
+      await sleep(1500);
+      for (const width of [1440, 375]) {
+        await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+        for (const theme of ['dark', 'light']) {
+          if (await evaluate('(document.documentElement.dataset.theme || "dark")') !== theme) await click('themeToggle');
+          await evaluate('window.scrollTo({top: 0, behavior: "instant"})');
+          await sleep(1100);
+          const viewport = await cdp.send('Page.captureScreenshot', { format: 'png' });
+          fs.writeFileSync(path.join(output, `${width}-${theme}-viewport.png`), Buffer.from(viewport.data, 'base64'));
+          const metrics = await cdp.send('Page.getLayoutMetrics');
+          const shot = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true,
+            clip: { x: 0, y: 0, width, height: Math.ceil(metrics.cssContentSize.height), scale: 1 } });
+          fs.writeFileSync(path.join(output, `${width}-${theme}.png`), Buffer.from(shot.data, 'base64'));
+        }
+      }
+      console.log('Screenshots: ' + output);
+      return;
+    }
+    if (process.argv.includes('--mobile')) {
+      await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      const tap = async selector => {
+        const point = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(350);
+      };
+      for (const [width, height] of [[375,667],[390,844],[430,932],[360,800],[412,915],[667,375],[844,390],[915,412]]) {
+        await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: true });
+        await reloadPage();
+        await sleep(1600);
+        assert.equal(await evaluate('matchMedia("(pointer: coarse)").matches'), true);
+        for (let language = 0; language < 2; language++) {
+          for (let theme = 0; theme < 2; theme++) {
+            await evaluate('scrollTo({top:0,behavior:"instant"})');
+            await sleep(100);
+            const issues = await evaluate(`(() => {
+              const brand = document.querySelector('.brand').getBoundingClientRect();
+              const controls = document.querySelector('.nav-right').getBoundingClientRect();
+              return {overlap:brand.right>controls.left, overflow:document.documentElement.scrollWidth>innerWidth,
+                cards:[...document.querySelectorAll('.card,.term,.hero-stats')].filter(el=>el.scrollWidth>el.clientWidth+1).length};
+            })()`);
+            assert.deepEqual(issues, {overlap:false,overflow:false,cards:0}, `Mobile ${width}x${height}`);
+            await tap('#navToggle');
+            assert.equal(await evaluate('document.getElementById("navToggle").getAttribute("aria-expanded")'), 'true');
+            await tap('.nav-link[href="#about"]');
+            assert.equal(await evaluate('document.getElementById("navToggle").getAttribute("aria-expanded")'), 'false');
+            for (let attempt = 0; attempt < 30; attempt++) {
+              if (await evaluate('document.querySelector(".nav-link.active").dataset.nav === "about"')) break;
+              await sleep(100);
+            }
+            assert.equal(await evaluate('document.querySelector(".nav-link.active").dataset.nav'), 'about');
+            const oldTheme = await evaluate('document.documentElement.dataset.theme');
+            await tap('#themeToggle');
+            assert.notEqual(await evaluate('document.documentElement.dataset.theme'), oldTheme);
+          }
+          const oldLanguage = await evaluate('document.documentElement.lang');
+          await tap('#languageToggle');
+          assert.notEqual(await evaluate('document.documentElement.lang'), oldLanguage);
+        }
+        console.log(`PASS mobile touch ${width}x${height}: both languages/themes, menu, anchor, overflow`);
+      }
+      assert.deepEqual(cdp.errors, [], 'Mobile runtime errors');
+      return;
+    }
     await click('languageToggle');
     assert.equal(await evaluate('document.documentElement.lang'), 'en');
+    assert.equal(await evaluate('document.getElementById("languageToggle").textContent'), 'ENG');
     assert.equal(await evaluate('document.title'), 'ForgeOS // Personal Workshop OS');
     assert.equal(await evaluate('document.querySelector(".nav-link").textContent'), 'Home');
     assert.equal(await evaluate('localStorage.getItem("forgeos:language")'), 'en');
@@ -104,12 +186,12 @@ async function connect(url) {
     await click('languageToggle');
     assert.equal(await evaluate('document.querySelector(".toast span[data-i18n-en]").textContent === document.querySelector("[data-toast]").dataset.toast'), true);
     await click('languageToggle');
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(1000);
     assert.equal(await evaluate('document.documentElement.lang'), 'en');
     assert.equal(await evaluate('document.documentElement.dataset.theme'), 'light');
 
-    for (const width of [320, 375, 768, 1024, 1100, 1440]) {
+    for (const width of [320, 375, 768, 1024, 1100, 1440, 1920]) {
       await cdp.send('Emulation.setDeviceMetricsOverride', { width, height: 812, deviceScaleFactor: 1, mobile: false });
       for (let lang = 0; lang < 2; lang++) {
         const layout = await evaluate(`(() => {
@@ -124,6 +206,12 @@ async function connect(url) {
             .map(el => el.className);
         })()`);
         assert.deepEqual(contentOverflow, [], 'Content overflow at width ' + width);
+        const alignment = await evaluate(`(() => {
+          const heading = document.querySelector('#modules .sec-title').getBoundingClientRect();
+          const intro = document.querySelector('#modules .hero-sub').getBoundingClientRect();
+          return Math.abs(heading.left - intro.left);
+        })()`);
+        assert(alignment < 1, 'Section heading/intro alignment at width ' + width);
         const smallTargets = await evaluate(`(() => [...document.querySelectorAll('a, button')]
           .filter(el => getComputedStyle(el).visibility !== 'hidden' && el.getClientRects().length)
           .filter(el => { const r = el.getBoundingClientRect(); return r.width < 43.5 || r.height < 43.5; })
@@ -139,18 +227,20 @@ async function connect(url) {
     }
     await evaluate('document.getElementById("console").scrollIntoView({behavior:"instant"})');
     await sleep(500);
+    assert.equal(await evaluate('document.querySelector(".nav-link.active").dataset.nav'), 'console');
+    assert.equal(await evaluate('document.querySelector(".nav-link.active").getAttribute("aria-current")'), 'location');
     for (let i = 0; i < 6; i++) await click('languageToggle');
     await sleep(8500);
     assert.equal(await evaluate('document.querySelectorAll("#termBody .t-line").length'), 8);
     assert.equal(await evaluate('/[\\u4e00-\\u9fff]/.test(document.getElementById("termBody").textContent)'), false);
     await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(600);
     assert.equal(await evaluate('document.getElementById("typewriter").textContent'), 'Forge code. Refine knowledge.');
     await click('languageToggle');
     assert.equal(await evaluate('document.getElementById("typewriter").textContent === ForgeI18n.t("type.0")'), true);
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: "Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error('Storage blocked'); };" });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(600);
     assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
     await click('languageToggle');
@@ -163,7 +253,7 @@ async function connect(url) {
       assert.deepEqual(unreadable, [], label);
     };
     const noObserver = await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: 'window.IntersectionObserver = undefined;' });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(700);
     assert.equal(await evaluate('document.documentElement.classList.contains("ui-ready")'), true);
     await assertReadable('Missing IntersectionObserver');
@@ -172,26 +262,27 @@ async function connect(url) {
 
     await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await cdp.send('Page.navigate', { url: baseUrl + '/#modules' });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(1800);
     await assertReadable('Direct module anchor');
     await evaluate('window.scrollTo({top: document.documentElement.scrollHeight, behavior:"instant"})');
     await sleep(1400);
     await assertReadable('Fast scroll to page end');
+    assert.equal(await evaluate('document.querySelector(".nav-link.active").dataset.nav'), 'about');
     await evaluate("document.querySelector('.f-links a[href=\"#modules\"]').click()");
     await sleep(1400);
     await assertReadable('Navigation to modules');
 
     await cdp.send('Network.enable');
     await cdp.send('Network.setBlockedURLs', { urls: ['*assets/js/ui.js*'] });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(6500);
     await assertReadable('Blocked UI script');
     assert.equal(await evaluate('getComputedStyle(document.getElementById("boot")).display'), 'none');
     assert.equal(await evaluate('getComputedStyle(document.querySelector(".hero-in")).opacity'), '1');
     await cdp.send('Network.setBlockedURLs', { urls: [] });
     await cdp.send('Emulation.setScriptExecutionDisabled', { value: true });
-    await cdp.send('Page.reload');
+    await reloadPage();
     await sleep(500);
     await assertReadable('JavaScript disabled');
     assert.equal(await evaluate('getComputedStyle(document.querySelector(".nav-links")).visibility'), 'visible');
@@ -210,7 +301,7 @@ async function connect(url) {
     assert.equal(picture.readUInt32BE(16), 1200);
     assert.equal(picture.readUInt32BE(20), 630);
     assert.deepEqual(cdp.errors, [], 'Browser runtime errors');
-    console.log('PASS: both languages at six widths, layout/touch targets, theme, live translations, persistence, animations, reduced motion, blocked storage, anchors, fast scroll, failed observer, blocked UI script, JavaScript disabled, SEO and social image; no runtime errors.');
+    console.log('PASS: both languages at seven widths, layout/alignment/touch targets, theme, live translations, persistence, animations, active navigation, reduced motion, blocked storage, anchors, fast scroll, failed observer, blocked UI script, JavaScript disabled, SEO and social image; no runtime errors.');
   } finally {
     if (cdp) cdp.close();
     browser.kill();
