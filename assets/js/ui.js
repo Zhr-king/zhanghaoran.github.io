@@ -300,16 +300,15 @@
   }
 
   /* ----------------------------------------------------------
-     七、导航栏
+     七、导航栏（一排常显，无折叠菜单）
      ---------------------------------------------------------- */
   const nav = document.getElementById('navbar');
-  const navLinks = document.getElementById('navLinks');
-  const navToggle = document.getElementById('navToggle');
 
   window.addEventListener('scroll', () => {
     if (nav) nav.classList.toggle('scrolled', window.scrollY > 8);
   }, { passive: true });
 
+<<<<<<< HEAD
   function setMenuOpen(open) {
     navLinks?.classList.toggle('open', open);
     navToggle?.setAttribute('aria-expanded', String(open));
@@ -342,6 +341,8 @@
     setMenuOpen(false);
   });
 
+=======
+>>>>>>> 5a56fc2cdb344ca4ba6ed4303731a0faa02aea03
   /* 高亮当前章节 */
   const navMap = {};
   document.querySelectorAll('.nav-link[data-nav]').forEach((a) => { navMap[a.dataset.nav] = a; });
