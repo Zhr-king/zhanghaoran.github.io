@@ -3,19 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ForgeOS // 个人工作间操作系统</title>
-  <meta name="description" content="ForgeOS —— 蓝白机甲风格的个人工作间与学习助手：学习、代码、笔记、任务、灵感，一站式锻造。">
-  <meta name="color-scheme" content="dark">
+  <title data-i18n-en="ForgeOS // Personal Workshop OS">ForgeOS // 个人工作间操作系统</title>
+  <meta name="description" data-i18n-content-en="ForgeOS — your personal workshop and study assistant for learning, code, notes, tasks, and ideas." content="ForgeOS —— 蓝白机甲风格的个人工作间与学习助手：学习、代码、笔记、任务、灵感，一站式锻造。">
+  <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#050a18">
-  <meta property="og:title" content="ForgeOS // 个人工作间操作系统">
-  <meta property="og:description" content="锻造你的知识与代码 —— 学习助手 · 代码工坊 · 知识引擎 · 任务矩阵。">
+  <meta property="og:title" data-i18n-content-en="ForgeOS // Personal Workshop OS" content="ForgeOS // 个人工作间操作系统">
+  <meta property="og:description" data-i18n-content-en="Forge your knowledge and code — Study Assistant, Code Forge, Knowledge Base, and Task Engine." content="锻造你的知识与代码 —— 学习助手 · 代码工坊 · 知识引擎 · 任务矩阵。">
   <meta property="og:type" content="website">
+  <link rel="canonical" href="https://forgeos.work/">
+  <meta property="og:url" content="https://forgeos.work/">
+  <meta property="og:site_name" content="ForgeOS">
+  <meta property="og:image" content="https://forgeos.work/assets/images/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ForgeOS — Learn. Build. Create.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ForgeOS // Personal Workshop OS">
+  <meta name="twitter:description" content="Your space to learn, build, and create.">
+  <meta name="twitter:image" content="https://forgeos.work/assets/images/social-card.png">
+  <meta name="twitter:image:alt" content="ForgeOS — Learn. Build. Create.">
+  <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebSite","name":"ForgeOS","url":"https://forgeos.work/","description":"A personal workshop for learning, coding, and ideas.","inLanguage":["zh-CN","en"]}
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 57 17.5v29L32 61 7 46.5v-29z' fill='%230a1a3d' stroke='%233b82f6' stroke-width='3'/%3E%3Cpath d='M35 12 20 36h9l-3 16 15-24h-9z' fill='%237dd3fc'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <!-- 更新站点后请把下面 CSS/JS 的 ?v= 改成新日期，访客浏览器会自动拉取新文件（防缓存错乱） -->
+  <link rel="stylesheet" href="assets/css/style.css?v=20260927d">
   <script>
     (function () {
       var el = document.documentElement;
       el.classList.add('js');
+      // A failed or blocked script must not leave the boot overlay covering the page.
+      window.setTimeout(function () {
+        if (!el.classList.contains('ui-ready')) el.classList.add('ui-fallback');
+      }, 6000);
       try {
         var t = localStorage.getItem('forgeos:theme');
         if (t === 'light' || t === 'dark') el.setAttribute('data-theme', t);
@@ -47,7 +67,7 @@
   <div class="cursor-ring" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
   <!-- ======== 启动画面 ======== -->
-  <div id="boot" role="status" aria-label="系统启动中">
+  <div id="boot" role="status" aria-label="系统启动中" data-i18n-label-en="System starting">
     <div class="boot-box">
       <div class="boot-logo">
         <div class="boot-ring"></div>
@@ -63,21 +83,21 @@
         <span class="boot-pct" id="bootPct">000%</span>
       </div>
       <div class="boot-lines" id="bootLines">
-        <p class="boot-line">&gt; FORGE CORE 初始化 …</p>
-        <p class="boot-line">&gt; 挂载渲染管线 [RENDERER]</p>
-        <p class="boot-line">&gt; 接入学习助手 [STUDY.SYS]</p>
-        <p class="boot-line">&gt; 同步知识库   [MOD-03]</p>
-        <p class="boot-line">&gt; 校准交互矩阵 [INPUT.X]</p>
-        <p class="boot-line">&gt; SYSTEM READY // 欢迎回家，指挥官</p>
+        <p class="boot-line"><span data-i18n-en="&gt; FORGE CORE init …">&gt; FORGE CORE 初始化 …</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; Loading [RENDERER]">&gt; 挂载渲染管线 [RENDERER]</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; Loading [STUDY.SYS]">&gt; 接入学习助手 [STUDY.SYS]</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; Syncing [MOD-03]">&gt; 同步知识库   [MOD-03]</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; Calibrating [INPUT.X]">&gt; 校准交互矩阵 [INPUT.X]</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; READY // Welcome back">&gt; SYSTEM READY // 欢迎回家，指挥官</span></p>
       </div>
     </div>
-    <p class="boot-skip">点击任意位置跳过</p>
+    <p class="boot-skip"><span data-i18n-en="Click to skip">点击任意位置跳过</span></p>
   </div>
 
   <!-- ======== 导航栏 ======== -->
   <header id="navbar">
     <div class="nav-inner">
-      <a class="brand" href="#home" aria-label="ForgeOS 首页">
+      <a class="brand" href="#home" aria-label="ForgeOS 首页" data-i18n-label-en="ForgeOS home">
         <svg viewBox="0 0 32 32" aria-hidden="true">
           <path d="M16 2.5 28 9.2v13.6L16 29.5 4 22.8V9.2z" fill="none" stroke="#3b82f6" stroke-width="2"/>
           <path d="M17.6 7.5 10.5 18h4.2l-1.6 6.8L20.5 14h-4.2z" fill="#7dd3fc"/>
@@ -85,20 +105,22 @@
         <span class="brand-text">FORGE<em>OS</em></span>
       </a>
 
-      <nav class="nav-links" id="navLinks" aria-label="主导航">
-        <a class="nav-link active" href="#home" data-nav="home">首页</a>
-        <a class="nav-link" href="#modules" data-nav="modules">系统模块</a>
-        <a class="nav-link" href="#console" data-nav="console">控制台</a>
-        <a class="nav-link" href="#about" data-nav="about">关于</a>
+      <nav class="nav-links" id="navLinks" aria-label="主导航" data-i18n-label-en="Main navigation">
+        <a class="nav-link active" href="#home" data-nav="home"><span data-i18n-en="Home">首页</span></a>
+        <a class="nav-link" href="#modules" data-nav="modules"><span data-i18n-en="Modules">系统模块</span></a>
+        <a class="nav-link" href="#console" data-nav="console"><span data-i18n-en="Console">控制台</span></a>
+        <a class="nav-link" href="#about" data-nav="about"><span data-i18n-en="About">关于</span></a>
       </nav>
 
       <div class="nav-right">
-        <span class="status-chip"><i class="status-dot"></i>SYSTEM ONLINE</span>
+
+        <button class="theme-toggle language-toggle" id="languageToggle" type="button" lang="zh-CN" aria-label="切换到英文">CN</button>
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换蓝白科幻风 / 夜色主题" aria-pressed="false">
-          <span class="tt-track"><span class="tt-knob"></span></span>
+          <svg class="tt-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+          <svg class="tt-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m4.9 19.1 1.4-1.4"/><path d="m17.7 6.3 1.4-1.4"/></svg>
           <span class="tt-label" id="themeLabel">夜色</span>
         </button>
-        <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false">
+        <button class="nav-toggle" id="navToggle" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="navLinks">
           <span></span><span></span><span></span>
         </button>
       </div>
@@ -120,15 +142,14 @@
       <div class="float-chip fc-4" style="--depth:32;--accent:#a78bfa"><div class="fc-body"><span class="fc-dot"></span>IDEA.CORE</div></div>
 
       <div class="hero-content">
-        <p class="kicker hero-in" style="--d:.02s"><span class="cursor-block"></span>PERSONAL WORKSHOP OS // 个人工作间系统</p>
+        <p class="kicker hero-in" style="--d:.02s"><span class="cursor-block"></span><span data-i18n-en="PERSONAL WORKSHOP">个人工作间</span></p>
 
         <h1 aria-label="FORGEOS">
           <span class="ltr" style="--i:0">F</span><span class="ltr" style="--i:1">O</span><span class="ltr" style="--i:2">R</span><span class="ltr" style="--i:3">G</span><span class="ltr" style="--i:4">E</span><span class="ltr" style="--i:5">O</span><span class="ltr" style="--i:6">S</span>
         </h1>
 
         <p class="hero-sub hero-in" style="--d:.42s">
-          像操作系统一样运转的个人工作间 —— <b>学习助手、代码工坊、知识引擎、任务矩阵</b>，
-          把知识放到炉火中锻造，把想法淬炼成作品。
+          <span data-i18n-en="Your space to ">把</span> <b><span data-i18n-en="learn, build, and create">学习、代码与灵感</span></b><span data-i18n-en=".">锻造成作品。</span>
         </p>
 
         <div class="type-row hero-in" style="--d:.5s">
@@ -139,37 +160,29 @@
 
         <div class="hero-actions hero-in" style="--d:.58s">
           <a class="btn btn-primary" href="#modules">
-            进入系统
+            <span data-i18n-en="View modules">查看模块</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
           </a>
-          <button class="btn btn-ghost" type="button" data-toast="文档中心正在锻造中，很快与你见面 ⚙">
-            查看文档
+          <button class="btn btn-ghost" type="button" data-toast="文档中心正在锻造中，很快与你见面 ⚙" data-toast-en="Documentation coming soon ⚙">
+            <span data-i18n-en="View docs">查看文档</span>
           </button>
         </div>
 
         <div class="hero-stats hero-in" style="--d:.68s">
           <div class="stat">
-            <span class="stat-num" data-count="6" data-pad="2">00</span>
-            <span class="stat-lbl">MODULES / 模块</span>
+            <span class="stat-num" data-count="6" data-pad="2">06</span>
+            <span class="stat-lbl"><span data-i18n-en="MODULES">模块</span></span>
           </div>
           <div class="stat">
-            <span class="stat-num" data-count="1286" data-comma="1" data-suffix="+">0</span>
-            <span class="stat-lbl">BUILDS / 编译</span>
-          </div>
-          <div class="stat">
-            <span class="stat-num" data-count="99.99" data-decimals="2" data-suffix="%">0</span>
-            <span class="stat-lbl">UPTIME / 在线率</span>
-          </div>
-          <div class="stat">
-            <span class="stat-num txt"><i class="status-dot"></i>ONLINE</span>
-            <span class="stat-lbl">STATUS / 状态</span>
+            <span class="stat-num" data-count="1286" data-comma="1" data-suffix="+">1,286<span class="sfx">+</span></span>
+            <span class="stat-lbl"><span data-i18n-en="BUILDS">编译</span></span>
           </div>
         </div>
       </div>
 
       <div class="scroll-hint hero-fade" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-        SCROLL // 向下探索
+        <span data-i18n-en="EXPLORE ↓">向下探索 ↓</span>
       </div>
     </section>
 
@@ -177,13 +190,13 @@
     <section class="section" id="modules">
       <div class="container">
         <div class="sec-head reveal">
-          <p class="sec-label">// 02 MODULES 系统模块</p>
+          <p class="sec-label"><span data-i18n-en="// 02 MODULES">// 02 模块</span></p>
           <div class="sec-title-wrap">
-            <h2 class="sec-title">为你的工作流而锻造</h2>
+            <h2 class="sec-title"><span data-i18n-en="Made for your workflow">为你的工作流而锻造</span></h2>
             <span class="sec-en">ALL-IN-ONE WORKSPACE</span>
           </div>
           <p class="hero-sub" style="margin-top:16px;max-width:640px">
-            ForgeOS 把学习与创作所需的能力拆成独立模块，像操作系统一样按需挂载、即插即用。
+            <span data-i18n-en="Six tools. Pick what you need.">六个模块，按需使用。</span>
           </p>
           <div class="sec-line"></div>
         </div>
@@ -197,12 +210,12 @@
               </div>
               <span class="mod-id">MOD-01</span>
             </div>
-            <h3 class="mod-title">学习助手</h3>
+            <h3 class="mod-title"><span data-i18n-en="Study Assistant">学习助手</span></h3>
             <p class="mod-en">STUDY ASSISTANT</p>
-            <p class="mod-desc">学习计划、智能问答、错题复盘与进度追踪，把知识真正吃透。</p>
+            <p class="mod-desc"><span data-i18n-en="Plan, practice, and track your learning.">学习计划、智能问答、错题复盘与进度追踪，把知识真正吃透。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small"><i class="status-dot"></i>ONLINE</span>
-              <button class="btn-mini" type="button" data-toast="「学习助手」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「学习助手」模块正在锻造中，敬请期待 ⚒" data-toast-en="Study Assistant: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
 
@@ -214,12 +227,12 @@
               </div>
               <span class="mod-id">MOD-02</span>
             </div>
-            <h3 class="mod-title">代码工坊</h3>
+            <h3 class="mod-title"><span data-i18n-en="Code Forge">代码工坊</span></h3>
             <p class="mod-en">CODE FORGE</p>
-            <p class="mod-desc">项目脚手架、代码片段库与常用工具链，灵感来了立刻开工。</p>
+            <p class="mod-desc"><span data-i18n-en="From first snippet to finished project.">项目脚手架、代码片段库与常用工具链，灵感来了立刻开工。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small"><i class="status-dot"></i>ONLINE</span>
-              <button class="btn-mini" type="button" data-toast="「代码工坊」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「代码工坊」模块正在锻造中，敬请期待 ⚒" data-toast-en="Code Forge: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
 
@@ -231,12 +244,12 @@
               </div>
               <span class="mod-id">MOD-03</span>
             </div>
-            <h3 class="mod-title">知识库</h3>
+            <h3 class="mod-title"><span data-i18n-en="Knowledge Base">知识库</span></h3>
             <p class="mod-en">KNOWLEDGE BASE</p>
-            <p class="mod-desc">结构化笔记、双向链接与全文检索，打造你的第二大脑。</p>
+            <p class="mod-desc"><span data-i18n-en="Connect your notes. Find ideas fast.">结构化笔记、双向链接与全文检索，打造你的第二大脑。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small"><i class="status-dot"></i>ONLINE</span>
-              <button class="btn-mini" type="button" data-toast="「知识库」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「知识库」模块正在锻造中，敬请期待 ⚒" data-toast-en="Knowledge Base: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
 
@@ -248,12 +261,12 @@
               </div>
               <span class="mod-id">MOD-04</span>
             </div>
-            <h3 class="mod-title">任务引擎</h3>
+            <h3 class="mod-title"><span data-i18n-en="Task Engine">任务引擎</span></h3>
             <p class="mod-en">TASK ENGINE</p>
-            <p class="mod-desc">看板、番茄钟与习惯追踪，让执行力像引擎一样稳定输出。</p>
+            <p class="mod-desc"><span data-i18n-en="Plan your day. Stay focused.">看板、番茄钟与习惯追踪，让执行力像引擎一样稳定输出。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small"><i class="status-dot"></i>ONLINE</span>
-              <button class="btn-mini" type="button" data-toast="「任务引擎」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「任务引擎」模块正在锻造中，敬请期待 ⚒" data-toast-en="Task Engine: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
 
@@ -265,12 +278,12 @@
               </div>
               <span class="mod-id">MOD-05</span>
             </div>
-            <h3 class="mod-title">灵感核心</h3>
+            <h3 class="mod-title"><span data-i18n-en="Idea Core">灵感核心</span></h3>
             <p class="mod-en">IDEA CORE</p>
-            <p class="mod-desc">灵感速记、思维导图与碎片归档，不错过任何一簇火花。</p>
+            <p class="mod-desc"><span data-i18n-en="Capture ideas before they fade.">灵感速记、思维导图与碎片归档，不错过任何一簇火花。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small wip"><i class="status-dot cyan"></i>BUILDING</span>
-              <button class="btn-mini" type="button" data-toast="「灵感核心」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「灵感核心」模块正在锻造中，敬请期待 ⚒" data-toast-en="Idea Core: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
 
@@ -282,12 +295,12 @@
               </div>
               <span class="mod-id">MOD-06</span>
             </div>
-            <h3 class="mod-title">系统面板</h3>
+            <h3 class="mod-title"><span data-i18n-en="Dashboard">系统面板</span></h3>
             <p class="mod-en">DASHBOARD</p>
-            <p class="mod-desc">学习数据统计、周报生成与日历集成，一屏总览全部状态。</p>
+            <p class="mod-desc"><span data-i18n-en="Your progress, at a glance.">学习数据统计、周报生成与日历集成，一屏总览全部状态。</span></p>
             <div class="card-bottom">
-              <span class="status-chip small wip"><i class="status-dot cyan"></i>BUILDING</span>
-              <button class="btn-mini" type="button" data-toast="「系统面板」模块正在锻造中，敬请期待 ⚒">启动 →</button>
+
+              <button class="btn-mini" type="button" data-toast="「系统面板」模块正在锻造中，敬请期待 ⚒" data-toast-en="Dashboard: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
             </div>
           </article>
         </div>
@@ -298,22 +311,22 @@
     <section class="section" id="console">
       <div class="container console-grid">
         <div class="console-text reveal">
-          <p class="sec-label">// 03 CONSOLE 控制台</p>
+          <p class="sec-label"><span data-i18n-en="// 03 CONSOLE">// 03 控制台</span></p>
           <div class="sec-title-wrap">
-            <h2 class="sec-title">一条命令，唤醒整个工作间</h2>
+            <h2 class="sec-title"><span data-i18n-en="One command. All set.">一条命令，唤醒整个工作间</span></h2>
           </div>
           <p>
-            ForgeOS 的每一块能力都可以用命令召唤。<span class="hl">forge run</span> 之后，
-            学习、编码、记录、复盘会像子系统一样协同运转。
+            <span data-i18n-en="Run ">ForgeOS 的每一块能力都可以用命令召唤。</span><span class="hl">forge run</span> <span data-i18n-en="and get to work.">之后，
+            学习、编码、记录、复盘会像子系统一样协同运转。</span>
           </p>
           <ul class="checklist">
-            <li>统一入口：知识与代码共享同一个工作台</li>
-            <li>按需挂载：模块可插拔，不用的绝不打扰</li>
-            <li>数据留痕：每天的锻造都会沉淀成进度</li>
+            <li><span data-i18n-en="Notes and code, together">统一入口：知识与代码共享同一个工作台</span></li>
+            <li><span data-i18n-en="Only the tools you need">按需挂载：模块可插拔，不用的绝不打扰</span></li>
+            <li><span data-i18n-en="See your progress">数据留痕：每天的锻造都会沉淀成进度</span></li>
           </ul>
           <div class="console-actions">
-            <button class="btn btn-primary" type="button" data-toast="forge CLI 正在锻造中，敬请期待 ⚙">
-              获取 forge CLI
+            <button class="btn btn-primary" type="button" data-toast="forge CLI 正在锻造中，敬请期待 ⚙" data-toast-en="forge CLI coming soon ⚙">
+              <span data-i18n-en="Get forge CLI">获取 forge CLI</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/></svg>
             </button>
           </div>
@@ -324,14 +337,31 @@
             <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
             <span class="term-title">forge — bash — 80×24</span>
           </div>
-          <div class="term-body" id="termBody" aria-live="polite"></div>
+          <div class="term-body" id="termBody" role="img" aria-label="工作间命令行演示" data-i18n-label-en="Workspace command-line demo">
+            <div class="t-line cmd">$ forge init my-workspace</div>
+            <div class="t-line cmd">$ forge add study-assistant knowledge-base</div>
+            <div class="t-line cmd">$ forge run --mode=deep-work</div>
+          </div>
         </div>
+      </div>
+    </section>
+    <!-- ======== 关于 ======== -->
+    <section class="section" id="about" aria-labelledby="aboutTitle">
+      <div class="container reveal">
+        <p class="sec-label"><span data-i18n-en="// 04 ABOUT">// 04 关于</span></p>
+        <div class="sec-title-wrap">
+          <h2 class="sec-title" id="aboutTitle"><span data-i18n-en="About ForgeOS">关于 ForgeOS</span></h2>
+        </div>
+        <p class="hero-sub" style="margin:16px 0 0;max-width:640px">
+          <span data-i18n-en="A personal workshop for learning, coding, and ideas. Built one step at a time.">ForgeOS 是一个持续打磨的个人工作间，把学习、代码和灵感放在一起，边学边做，慢慢完善。</span>
+        </p>
+        <div class="sec-line"></div>
       </div>
     </section>
   </main>
 
   <!-- ======== 页脚 ======== -->
-  <footer class="footer" id="about">
+  <footer class="footer">
     <div class="footer-grid">
       <div>
         <div class="f-brand">
@@ -341,42 +371,33 @@
           </svg>
           <span class="f-brand-text">FORGEOS</span>
         </div>
-        <p class="f-tag">像操作系统一样全方面运转的个人工作间与学习助手，把每一天的学习与创作都锻造成型。</p>
-        <p class="f-mono">// FORGED BY 张浩然</p>
+        <p class="f-tag"><span data-i18n-en="A home for your ideas and work.">让学习与灵感，都有落点。</span></p>
       </div>
 
       <div class="f-col">
-        <h4>NAVIGATE / 导航</h4>
+        <h4><span data-i18n-en="NAVIGATE">导航</span></h4>
         <ul class="f-links">
-          <li><a href="#home">首页</a></li>
-          <li><a href="#modules">系统模块</a></li>
-          <li><a href="#console">控制台</a></li>
-          <li><a href="#home">返回顶部</a></li>
+          <li><a href="#home"><span data-i18n-en="Home">首页</span></a></li>
+          <li><a href="#modules"><span data-i18n-en="Modules">系统模块</span></a></li>
+          <li><a href="#console"><span data-i18n-en="Console">控制台</span></a></li>
+          <li><a href="#about"><span data-i18n-en="About">关于</span></a></li>
+          <li><a href="#home"><span data-i18n-en="Back to top">返回顶部</span></a></li>
         </ul>
       </div>
 
-      <div class="f-col">
-        <h4>SYSTEM / 状态</h4>
-        <ul class="f-meta">
-          <li><span>STATUS</span><span>ONLINE</span></li>
-          <li><span>VERSION</span><span>v2026.09</span></li>
-          <li><span>HOST</span><span>GitHub Pages</span></li>
-          <li><span>MODE</span><span>DEEP WORK</span></li>
-        </ul>
-      </div>
     </div>
 
     <div class="footer-bottom">
       <span>© <span class="js-year">2026</span> FORGEOS // PERSONAL WORKSHOP OS</span>
-      <span>POWERED BY GITHUB PAGES</span>
     </div>
   </footer>
 
   <!-- ======== Toast 容器 ======== -->
   <div id="toastRoot" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="assets/js/fx.js"></script>
-  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/i18n.js?v=20260927e"></script>
+  <script src="assets/js/fx.js?v=20260922b"></script>
+  <script src="assets/js/ui.js?v=20260927c"></script>
 </body>
 </html>
 

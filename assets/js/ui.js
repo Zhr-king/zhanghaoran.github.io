@@ -7,6 +7,9 @@
 
   const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const FINE = window.matchMedia('(pointer: fine)').matches;
+  const CAN_OBSERVE = typeof window.IntersectionObserver === 'function';
+  const i18n = window.ForgeI18n;
+  const t = (key) => i18n.t(key);
 
   /* ----------------------------------------------------------
      一、启动序列（每次会话只播放一次）
@@ -83,27 +86,32 @@
   (function typewriter() {
     const el = document.getElementById('typewriter');
     if (!el) return;
-    const PHRASES = [
-      '锻造代码，淬炼知识。',
-      '学习助手 · 代码工坊 · 知识引擎 · 任务矩阵。',
-      '一站式个人工作间，为你而建。'
-    ];
-    if (REDUCED) { el.textContent = PHRASES[0]; return; }
-
+    const phrases = () => [t('type.0'), t('type.1'), t('type.2')];
     let pi = 0, ci = 0, del = false;
-    (function tick() {
+    let timer;
+    function schedule(delay) { timer = setTimeout(tick, delay); }
+    function tick() {
+      const PHRASES = phrases();
       const cur = PHRASES[pi];
       if (!del) {
         ci++;
         el.textContent = cur.slice(0, ci);
-        if (ci === cur.length) { del = true; return setTimeout(tick, 2100); }
-        return setTimeout(tick, 68);
+        if (ci === cur.length) { del = true; return schedule(2100); }
+        return schedule(68);
       }
       ci--;
       el.textContent = cur.slice(0, ci);
-      if (ci === 0) { del = false; pi = (pi + 1) % PHRASES.length; return setTimeout(tick, 420); }
-      setTimeout(tick, 26);
-    })();
+      if (ci === 0) { del = false; pi = (pi + 1) % PHRASES.length; return schedule(420); }
+      schedule(26);
+    }
+    function restart() {
+      clearTimeout(timer);
+      pi = 0; ci = 0; del = false;
+      if (REDUCED) el.textContent = phrases()[0];
+      else tick();
+    }
+    document.addEventListener('forgeos:languagechange', restart);
+    restart();
   })();
 
   /* ----------------------------------------------------------
@@ -112,6 +120,7 @@
   function initCounters() {
     const nodes = document.querySelectorAll('[data-count]');
     if (!nodes.length) return;
+    if (!CAN_OBSERVE) { nodes.forEach(animateCount); return; }
 
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
@@ -152,30 +161,40 @@
   /* ----------------------------------------------------------
      四、终端自动打字（进入视口后播放一次）
      ---------------------------------------------------------- */
-  const TERM_LINES = [
+  const terminalLines = () => [
     { t: 'cmd', x: 'forge init my-workspace' },
-    { t: 'out', x: '[CORE] 正在锻造你的工作间…' },
-    { t: 'ok',  x: '[ OK ] 核心引擎已挂载' },
+    { t: 'out', x: t('term.init') },
+    { t: 'ok',  x: t('term.ready') },
     { t: 'cmd', x: 'forge add study-assistant knowledge-base' },
-    { t: 'ok',  x: '[ OK ] 学习助手 + 知识库 已接入' },
+    { t: 'ok',  x: t('term.modules') },
     { t: 'cmd', x: 'forge run --mode=deep-work' },
-    { t: 'out', x: '[SYS ] 欢迎回来，指挥官。' }
+    { t: 'out', x: t('term.welcome') }
   ];
 
   (function terminal() {
     const body = document.getElementById('termBody');
     if (!body) return;
     let started = false;
+    let timer;
+    document.addEventListener('forgeos:languagechange', () => {
+      if (!started) return;
+      clearTimeout(timer);
+      body.replaceChildren();
+      play();
+    });
 
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (!en.isIntersecting || started) return;
+    if (CAN_OBSERVE) {
+      const io = new IntersectionObserver((entries) => {
+        if (!entries.some(en => en.isIntersecting) || started) return;
         started = true;
         io.disconnect();
         play();
-      });
-    }, { threshold: 0.35 });
-    io.observe(body);
+      }, { threshold: 0, rootMargin: '120px 0px' });
+      io.observe(body);
+    } else {
+      started = true;
+      play();
+    }
 
     function addLine(cls, html) {
       const p = document.createElement('div');
@@ -186,6 +205,8 @@
     }
 
     function play() {
+      body.replaceChildren();
+      const TERM_LINES = terminalLines();
       if (REDUCED) {
         TERM_LINES.forEach((l) => {
           const html = l.t === 'cmd'
@@ -215,8 +236,8 @@
           ci++;
           const chunk = line.x.slice(0, ci);
           node.innerHTML = prefix + (isOk ? chunk.replace('[ OK ]', '<span class="t-ok">[ OK ]</span>') : chunk);
-          if (ci < line.x.length) return setTimeout(type, speed);
-          setTimeout(nextLine, line.t === 'cmd' ? 320 : 160);
+          if (ci < line.x.length) { timer = setTimeout(type, speed); return; }
+          timer = setTimeout(nextLine, line.t === 'cmd' ? 320 : 160);
         })();
       })();
     }
@@ -225,19 +246,37 @@
   /* ----------------------------------------------------------
      五、滚动出现动画
      ---------------------------------------------------------- */
-  const revealIO = new IntersectionObserver((entries) => {
+  // Content is visible by default; entering the viewport starts a finite animation.
+  const revealIO = CAN_OBSERVE ? new IntersectionObserver((entries) => {
     entries.forEach((en) => {
-      if (!en.isIntersecting) return;
-      en.target.classList.add('in');
-      revealIO.unobserve(en.target);
+      if (en.isIntersecting) reveal(en.target);
     });
-  }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+  }, { threshold: 0, rootMargin: '120px 0px' }) : null;
+
+  function reveal(el) {
+    el.classList.add('in');
+    revealIO?.unobserve(el);
+  }
 
   document.querySelectorAll('.reveal').forEach((el) => {
-    const d = el.dataset.delay;
-    if (d) el.style.transitionDelay = d + 'ms';
-    revealIO.observe(el);
+    if (el.dataset.delay) el.style.setProperty('--reveal-delay', el.dataset.delay + 'ms');
+    revealIO?.observe(el);
   });
+
+  function revealAnchor(hash) {
+    let id;
+    try { id = decodeURIComponent(hash.slice(1)); } catch (e) { return; }
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (target.matches('.reveal')) reveal(target);
+    target.querySelectorAll('.reveal').forEach(reveal);
+  }
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="#"]');
+    if (link) revealAnchor(link.getAttribute('href'));
+  });
+  window.addEventListener('hashchange', () => revealAnchor(location.hash));
+  revealAnchor(location.hash);
 
   /* ----------------------------------------------------------
      六、模块卡片 3D 倾斜 + 光泽
@@ -271,29 +310,49 @@
     if (nav) nav.classList.toggle('scrolled', window.scrollY > 8);
   }, { passive: true });
 
+  function setMenuOpen(open) {
+    navLinks?.classList.toggle('open', open);
+    navToggle?.setAttribute('aria-expanded', String(open));
+    navToggle?.setAttribute('aria-label', t(open ? 'menu.close' : 'menu.open'));
+  }
+
   navToggle?.addEventListener('click', () => {
-    const open = navLinks.classList.toggle('open');
-    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    setMenuOpen(!navLinks?.classList.contains('open'));
   });
 
   navLinks?.addEventListener('click', (e) => {
     if (e.target.closest('a')) {
-      navLinks.classList.remove('open');
-      navToggle?.setAttribute('aria-expanded', 'false');
+      setMenuOpen(false);
     }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!nav?.contains(e.target)) setMenuOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navLinks?.classList.contains('open')) {
+      setMenuOpen(false);
+      navToggle?.focus();
+    }
+  });
+  nav?.addEventListener('focusout', (e) => {
+    if (!nav.contains(e.relatedTarget)) setMenuOpen(false);
+  });
+  window.matchMedia('(max-width: 1024px)').addEventListener('change', () => {
+    setMenuOpen(false);
   });
 
   /* 高亮当前章节 */
   const navMap = {};
   document.querySelectorAll('.nav-link[data-nav]').forEach((a) => { navMap[a.dataset.nav] = a; });
-  const secIO = new IntersectionObserver((entries) => {
+  const secIO = CAN_OBSERVE ? new IntersectionObserver((entries) => {
     entries.forEach((en) => {
       if (!en.isIntersecting) return;
       document.querySelectorAll('.nav-link.active').forEach((a) => a.classList.remove('active'));
       navMap[en.target.id]?.classList.add('active');
     });
-  }, { rootMargin: '-42% 0px -52% 0px' });
-  document.querySelectorAll('section[id], footer[id]').forEach((s) => secIO.observe(s));
+  }, { rootMargin: '-42% 0px -52% 0px' }) : null;
+  document.querySelectorAll('section[id], footer[id]').forEach((s) => secIO?.observe(s));
 
   /* ----------------------------------------------------------
      七点五、主题切换（右上角：蓝白科幻风 ⇄ 夜色）
@@ -309,7 +368,8 @@
   function applyTheme(t, persist) {
     if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
     else document.documentElement.removeAttribute('data-theme');
-    if (themeLabel) themeLabel.textContent = t === 'light' ? '蓝白' : '夜色';
+    if (themeLabel) themeLabel.textContent = i18n.t('theme.' + t);
+    themeToggle?.setAttribute('aria-label', i18n.t(t === 'light' ? 'theme.switchDark' : 'theme.switchLight'));
     themeToggle?.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
     if (themeMeta) themeMeta.setAttribute('content', t === 'light' ? '#eef4fd' : '#050a18');
     if (persist) {
@@ -318,6 +378,11 @@
   }
 
   applyTheme(currentTheme(), false);
+  setMenuOpen(false);
+  document.addEventListener('forgeos:languagechange', () => {
+    applyTheme(currentTheme(), false);
+    setMenuOpen(navLinks?.classList.contains('open') ?? false);
+  });
   themeToggle?.addEventListener('click', () => {
     applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
   });
@@ -326,13 +391,16 @@
      八、Toast 提示
      ---------------------------------------------------------- */
   const toastRoot = document.getElementById('toastRoot');
-  function toast(msg) {
+  function toast(source) {
     if (!toastRoot) return;
     const t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML = '<span class="toast-dot"></span><span></span>';
-    t.lastElementChild.textContent = msg;
+    // Register the original Chinese text before translating an active notification.
+    t.lastElementChild.textContent = source.dataset.toastZh;
+    t.lastElementChild.setAttribute('data-i18n-en', source.dataset.toastEn);
     toastRoot.appendChild(t);
+    i18n.translate();
     requestAnimationFrame(() => t.classList.add('in'));
     setTimeout(() => {
       t.classList.remove('in');
@@ -341,9 +409,11 @@
   }
 
   document.querySelectorAll('[data-toast]').forEach((el) => {
+    // Static translation has already run; keep the Chinese fallback independently.
+    el.dataset.toastZh = i18n.originalToast(el);
     el.addEventListener('click', (e) => {
       if (el.tagName === 'A' && el.getAttribute('href') === '#') e.preventDefault();
-      toast(el.dataset.toast);
+      toast(el);
     });
   });
 
@@ -352,4 +422,6 @@
      ---------------------------------------------------------- */
   document.querySelectorAll('.js-year').forEach((el) => { el.textContent = new Date().getFullYear(); });
   if (nav) nav.classList.toggle('scrolled', window.scrollY > 8);
+  document.documentElement.classList.add('ui-ready');
+  document.documentElement.classList.remove('ui-fallback');
 })();

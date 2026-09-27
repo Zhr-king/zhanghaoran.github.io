@@ -471,6 +471,14 @@
 
   resize();
 
+  // 静态背景也需要响应主题切换。
+  if (REDUCED) {
+    new MutationObserver(() => {
+      syncTheme();
+      if (ctx) drawFrame(1);
+    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+
   if (!REDUCED) {
     requestAnimationFrame(frame);
   } else if (spot) {
