@@ -47,8 +47,8 @@
     document.documentElement.lang = language;
     const toggle = document.getElementById('languageToggle');
     if (toggle) {
-      toggle.textContent = language === 'en' ? '中文 CN' : 'English ENG';
-      toggle.lang = language === 'en' ? 'zh-CN' : 'en';
+      toggle.textContent = language === 'en' ? 'ENG' : 'CN';
+      toggle.lang = language;
       toggle.setAttribute('aria-label', language === 'en' ? 'Switch to Chinese' : '切换到英文');
       toggle.title = language === 'en' ? 'Switch to Chinese' : '切换到英文';
     }
