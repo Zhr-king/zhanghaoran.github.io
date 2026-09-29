@@ -1248,6 +1248,24 @@ html[data-theme="light"] .toast {
   box-shadow: 0 18px 44px -20px rgba(37, 99, 235, .55), inset 0 1px 0 #fff;
 }
 
+/* Fade the complete scene, including gradients and canvas effects. */
+::view-transition-group(root) { animation-duration: .9s; }
+::view-transition-old(root) { animation: none; }
+::view-transition-new(root) {
+  animation: themeFadeIn .9s ease-in-out both;
+  mix-blend-mode: normal;
+}
+::view-transition { pointer-events: none; }
+@keyframes themeFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Older browsers still ease the main surface and text colors. */
+html.theme-fading body,
+html.theme-fading body * {
+  transition: background-color .9s ease-in-out, color .9s ease-in-out,
+    border-color .9s ease-in-out, box-shadow .9s ease-in-out,
+    fill .9s ease-in-out, stroke .9s ease-in-out !important;
+}
+
 /* ---------- 15. 可访问性 / 降级 ---------- */
 @media (prefers-reduced-motion: reduce) {
   html.js[data-theme="light"] .reveal { filter: none; transform: none; }

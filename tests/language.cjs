@@ -108,7 +108,10 @@ async function connect(url) {
     await evaluate('document.getElementById("languageToggle").click()');
     await reloadPage();
     assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN', 'Remember explicit Chinese preference');
-    const click = id => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
+    const click = async id => {
+      await evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
+      if (id === 'themeToggle') await sleep(1100);
+    };
     if (process.argv.includes('--screenshots')) {
       const output = path.join(os.tmpdir(), 'forgeos-layout-review');
       fs.mkdirSync(output, { recursive: true });
@@ -136,7 +139,7 @@ async function connect(url) {
         const point = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        await sleep(350);
+        await sleep(selector === '#themeToggle' ? 1100 : 350);
       };
       for (const [width, height] of [[375,667],[390,844],[430,932],[360,800],[412,915],[667,375],[844,390],[915,412]]) {
         await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: true });
@@ -185,6 +188,17 @@ async function connect(url) {
     assert.equal(await evaluate('document.querySelector(".brand svg").children.length'), 2);
     await click('themeToggle');
     assert.equal(await evaluate('document.getElementById("themeLabel").textContent'), 'Light');
+    assert.equal(await evaluate('getComputedStyle(document.documentElement,"::view-transition-new(root)").animationDuration'), '0.9s');
+    await evaluate('document.getElementById("themeToggle").click(); document.getElementById("themeToggle").click()');
+    await sleep(1300);
+    assert.equal(await evaluate('document.documentElement.dataset.theme'), 'light', 'Rapid toggles keep the final preference');
+    await evaluate('window.__nativeViewTransition = document.startViewTransition; document.startViewTransition = undefined');
+    await evaluate('document.getElementById("themeToggle").click()');
+    assert.equal(await evaluate('document.documentElement.classList.contains("theme-fading")'), true);
+    await sleep(1100);
+    assert.equal(await evaluate('document.documentElement.classList.contains("theme-fading")'), false);
+    await click('themeToggle');
+    await evaluate('document.startViewTransition = window.__nativeViewTransition; delete window.__nativeViewTransition');
     await evaluate('document.querySelector("[data-toast]").click()');
     assert.match(await evaluate('document.querySelector(".toast").textContent'), /Documentation/);
     await click('languageToggle');

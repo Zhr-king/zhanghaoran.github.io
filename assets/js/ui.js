@@ -398,8 +398,28 @@
     applyTheme(currentTheme(), false);
     setMenuOpen(navLinks?.classList.contains('open') ?? false);
   });
+  let themeTransition = null;
+  let themeFadeTimer;
+  let requestedTheme = currentTheme();
   themeToggle?.addEventListener('click', () => {
-    applyTheme(currentTheme() === 'light' ? 'dark' : 'light', true);
+    requestedTheme = requestedTheme === 'light' ? 'dark' : 'light';
+    const nextTheme = requestedTheme;
+    const update = () => applyTheme(nextTheme, true);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      update();
+      return;
+    }
+    if (document.startViewTransition) {
+      themeTransition?.skipTransition();
+      themeTransition = document.startViewTransition(update);
+      // A skipped visual transition must still apply the requested preference.
+      themeTransition.ready.catch(() => {});
+    } else {
+      document.documentElement.classList.add('theme-fading');
+      clearTimeout(themeFadeTimer);
+      update();
+      themeFadeTimer = setTimeout(() => document.documentElement.classList.remove('theme-fading'), 950);
+    }
   });
 
   /* ----------------------------------------------------------
