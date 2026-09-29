@@ -18,9 +18,9 @@
     'term.welcome': ['[SYS ] 欢迎回来，指挥官。', '[SYS ] Welcome back, Commander.']
   };
   const originals = new WeakMap();
-  let language = 'zh-CN';
+  let language = 'en';
   try {
-    if (localStorage.getItem('forgeos:language') === 'en') language = 'en';
+    if (localStorage.getItem('forgeos:language') === 'zh-CN') language = 'zh-CN';
   } catch (e) { /* Storage may be unavailable; switching still works. */ }
 
   function t(key) {

@@ -103,7 +103,11 @@ async function connect(url) {
       if (await evaluate('!!window.ForgeI18n && !!document.body.classList.contains("ready")')) break;
       await sleep(100);
     }
-    assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
+    assert.equal(await evaluate('document.documentElement.lang'), 'en');
+    assert.equal(await evaluate('document.getElementById("languageToggle").textContent'), 'ENG');
+    await evaluate('document.getElementById("languageToggle").click()');
+    await reloadPage();
+    assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN', 'Remember explicit Chinese preference');
     const click = id => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
     if (process.argv.includes('--screenshots')) {
       const output = path.join(os.tmpdir(), 'forgeos-layout-review');
@@ -242,9 +246,9 @@ async function connect(url) {
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: "Storage.prototype.getItem = Storage.prototype.setItem = () => { throw new Error('Storage blocked'); };" });
     await reloadPage();
     await sleep(600);
-    assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
+    assert.equal(await evaluate('document.documentElement.lang'), 'en', 'English default when storage is blocked');
     await click('languageToggle');
-    assert.equal(await evaluate('document.documentElement.lang'), 'en');
+    assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN');
     // No-JS/failed observer cases must keep all reveal content readable.
     const assertReadable = async label => {
       const unreadable = await evaluate(`(() => [...document.querySelectorAll('.reveal')]
