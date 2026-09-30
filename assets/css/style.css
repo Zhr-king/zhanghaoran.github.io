@@ -1249,10 +1249,10 @@ html[data-theme="light"] .toast {
 }
 
 /* Fade the complete scene, including gradients and canvas effects. */
-::view-transition-group(root) { animation-duration: .9s; }
+::view-transition-group(root) { animation-duration: 1.5s; }
 ::view-transition-old(root) { animation: none; }
 ::view-transition-new(root) {
-  animation: themeFadeIn .9s ease-in-out both;
+  animation: themeFadeIn 1.5s ease-in-out both;
   mix-blend-mode: normal;
 }
 ::view-transition { pointer-events: none; }
@@ -1261,9 +1261,9 @@ html[data-theme="light"] .toast {
 /* Older browsers still ease the main surface and text colors. */
 html.theme-fading body,
 html.theme-fading body * {
-  transition: background-color .9s ease-in-out, color .9s ease-in-out,
-    border-color .9s ease-in-out, box-shadow .9s ease-in-out,
-    fill .9s ease-in-out, stroke .9s ease-in-out !important;
+  transition: background-color 1.5s ease-in-out, color 1.5s ease-in-out,
+    border-color 1.5s ease-in-out, box-shadow 1.5s ease-in-out,
+    fill 1.5s ease-in-out, stroke 1.5s ease-in-out !important;
 }
 
 /* ---------- 15. 可访问性 / 降级 ---------- */

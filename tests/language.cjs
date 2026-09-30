@@ -110,7 +110,7 @@ async function connect(url) {
     assert.equal(await evaluate('document.documentElement.lang'), 'zh-CN', 'Remember explicit Chinese preference');
     const click = async id => {
       await evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
-      if (id === 'themeToggle') await sleep(1100);
+      if (id === 'themeToggle') await sleep(1700);
     };
     if (process.argv.includes('--screenshots')) {
       const output = path.join(os.tmpdir(), 'forgeos-layout-review');
@@ -121,7 +121,7 @@ async function connect(url) {
         for (const theme of ['dark', 'light']) {
           if (await evaluate('(document.documentElement.dataset.theme || "dark")') !== theme) await click('themeToggle');
           await evaluate('window.scrollTo({top: 0, behavior: "instant"})');
-          await sleep(1100);
+          await sleep(1700);
           const viewport = await cdp.send('Page.captureScreenshot', { format: 'png' });
           fs.writeFileSync(path.join(output, `${width}-${theme}-viewport.png`), Buffer.from(viewport.data, 'base64'));
           const metrics = await cdp.send('Page.getLayoutMetrics');
@@ -139,7 +139,7 @@ async function connect(url) {
         const point = await evaluate(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
         await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        await sleep(selector === '#themeToggle' ? 1100 : 350);
+        await sleep(selector === '#themeToggle' ? 1700 : 350);
       };
       for (const [width, height] of [[375,667],[390,844],[430,932],[360,800],[412,915],[667,375],[844,390],[915,412]]) {
         await cdp.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 2, mobile: true });
@@ -188,14 +188,14 @@ async function connect(url) {
     assert.equal(await evaluate('document.querySelector(".brand svg").children.length'), 2);
     await click('themeToggle');
     assert.equal(await evaluate('document.getElementById("themeLabel").textContent'), 'Light');
-    assert.equal(await evaluate('getComputedStyle(document.documentElement,"::view-transition-new(root)").animationDuration'), '0.9s');
+    assert.equal(await evaluate('getComputedStyle(document.documentElement,"::view-transition-new(root)").animationDuration'), '1.5s');
     await evaluate('document.getElementById("themeToggle").click(); document.getElementById("themeToggle").click()');
-    await sleep(1300);
+    await sleep(1900);
     assert.equal(await evaluate('document.documentElement.dataset.theme'), 'light', 'Rapid toggles keep the final preference');
     await evaluate('window.__nativeViewTransition = document.startViewTransition; document.startViewTransition = undefined');
     await evaluate('document.getElementById("themeToggle").click()');
     assert.equal(await evaluate('document.documentElement.classList.contains("theme-fading")'), true);
-    await sleep(1100);
+    await sleep(1700);
     assert.equal(await evaluate('document.documentElement.classList.contains("theme-fading")'), false);
     await click('themeToggle');
     await evaluate('document.startViewTransition = window.__nativeViewTransition; delete window.__nativeViewTransition');

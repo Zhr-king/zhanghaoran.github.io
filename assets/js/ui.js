@@ -418,7 +418,7 @@
       document.documentElement.classList.add('theme-fading');
       clearTimeout(themeFadeTimer);
       update();
-      themeFadeTimer = setTimeout(() => document.documentElement.classList.remove('theme-fading'), 950);
+      themeFadeTimer = setTimeout(() => document.documentElement.classList.remove('theme-fading'), 1550);
     }
   });
 
