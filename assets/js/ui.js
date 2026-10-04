@@ -426,8 +426,9 @@
      八、Toast 提示
      ---------------------------------------------------------- */
   const toastRoot = document.getElementById('toastRoot');
+  const MAX_TOASTS = 3;
   function toast(source) {
-    if (!toastRoot) return;
+    if (!toastRoot || toastRoot.childElementCount >= MAX_TOASTS) return;
     const t = document.createElement('div');
     t.className = 'toast';
     t.innerHTML = '<span class="toast-dot"></span><span></span>';
