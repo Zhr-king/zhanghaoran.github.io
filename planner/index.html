@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n-en="Dynamic Time Planning · ForgeOS">动态时间规划 · ForgeOS</title>
+  <meta name="description" content="ForgeOS 动态时间规划原型：任务录入、日程建议、冲突检查与确认后重排。" data-i18n-content-en="ForgeOS planning prototype: capture tasks, review schedules, check conflicts, and confirm changes.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#050a18">
+  <meta property="og:title" content="Dynamic Time Planning · ForgeOS">
+  <meta property="og:description" content="A flexible plan for the way you work. Task capture, schedule review, and dynamic replanning.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://forgeos.work/planner/">
+  <meta property="og:image" content="https://forgeos.work/assets/images/social-card.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://forgeos.work/planner/">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261008">
+  <link rel="stylesheet" href="../assets/css/planner.css?v=20261008">
+  <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+</head>
+<body class="planner-page">
+  <a class="skip-link" href="#workspace" data-i18n-en="Skip to planner">跳转到规划工作台</a>
+  <header class="planner-header">
+    <a class="planner-brand" href="../"><span class="brand-mark" aria-hidden="true">F</span> FORGEOS <span class="brand-divider">/</span><span data-i18n-en="PLANNER">时间规划</span></a>
+    <div class="header-actions">
+      <a class="back-link" href="template.html" data-i18n-en="Design preview ↗">设计样板 ↗</a>
+      <a class="back-link" href="../#modules" data-i18n-en="← Workspace">← 工作间</a>
+      <button class="utility-btn" id="languageToggle" type="button">CN</button>
+      <button class="utility-btn" id="themeToggle" type="button" aria-label="切换主题"><span id="themeLabel">夜色</span></button>
+    </div>
+  </header>
+  <main class="planner-shell" id="workspace">
+    <section class="planner-intro">
+      <div>
+        <p class="eyebrow">FORGEOS / DYNAMIC TIME PLANNING</p>
+        <h1 data-i18n-en="Make room for what matters.">为重要的事，安排好时间。</h1>
+        <p class="intro-copy" data-i18n-en="Capture a task. Review a plan. Adapt as your day changes.">记录任务，确认计划，让日程跟上你的变化。</p>
+      </div>
+      <div class="intro-side"><span class="prototype-badge" data-i18n-en="INTERACTIVE PROTOTYPE">交互原型</span><button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button></div>
+    </section>
+    <div class="prototype-note"><span class="note-dot" aria-hidden="true"></span><p data-i18n-en="Local rules preview · No AI agent connected yet. Review recognized fields before adding a task. Your data stays in this browser.">本地规则演示 · 尚未接入 AI 智能体，识别结果请核对后添加。数据仅保存在当前浏览器。</p></div>
+    <noscript><p class="prototype-note">请启用 JavaScript 使用任务和排程功能。 Enable JavaScript to use the planner.</p></noscript>
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+    <section class="metrics" aria-label="规划概览" data-i18n-label-en="Planning overview">
+      <div><span data-i18n-en="OPEN TASKS">待办任务</span><strong id="taskCount">0</strong><small data-i18n-en="Ready to plan">把想法变成行动</small></div>
+      <div><span data-i18n-en="PLANNED TIME">已确认时长</span><strong id="plannedHours">0 <small>h</small></strong><small data-i18n-en="Your confirmed schedule">以确认的日程为准</small></div>
+      <div><span data-i18n-en="NEEDS ATTENTION">待处理冲突</span><strong id="conflictCount">—</strong><small data-i18n-en="Checked with each proposal">生成建议后检查</small></div>
+      <div><span data-i18n-en="PLANNING WINDOW">规划范围</span><strong>7 <small data-i18n-en="days">天</small></strong><small data-i18n-en="Starting today">从今天开始</small></div>
+    </section>
+    <div class="planner-grid">
+      <aside class="capture-column">
+        <section class="planner-panel">
+          <div class="panel-heading"><div><p class="eyebrow">01 / CAPTURE</p><h2 data-i18n-en="What is on your mind?">有什么待办？</h2></div><span class="step-icon" aria-hidden="true">＋</span></div>
+          <form id="captureForm">
+            <label for="naturalTask" data-i18n-en="Describe your task">用一句话描述任务</label>
+            <textarea id="naturalTask" rows="3" maxlength="300" required placeholder="明天下午5点前完成项目报告，需要2小时，高优先级" data-i18n-placeholder-en="Finish the project report tomorrow by 17:00, 2 hours, high priority"></textarea>
+            <p class="field-help" data-i18n-en="Supports today, tomorrow, YYYY-MM-DD, HH:mm, duration, and high priority. Other details can be set below.">支持今天、明天、具体日期、几点、时长和高优先级；其他信息可在下方填写。</p>
+            <button class="secondary-btn full-width" type="submit" data-i18n-en="Extract task details ↓">识别任务信息 ↓</button>
+          </form>
+          <form id="taskForm" class="task-form">
+            <div class="form-divider"><span id="editorHeading" data-i18n-en="REVIEW & ADD">核对并添加</span></div>
+            <label for="taskTitle" data-i18n-en="Task name">任务名称</label><input id="taskTitle" maxlength="300" required>
+            <div class="form-row">
+              <div><label for="taskDuration" data-i18n-en="Minutes">预计分钟</label><input id="taskDuration" type="number" min="15" max="720" step="1" value="60" required></div>
+              <div><label for="taskPriority" data-i18n-en="Priority">优先级</label><select id="taskPriority"><option value="normal" data-i18n-en="Normal">普通</option><option value="high" data-i18n-en="High">高</option></select></div>
+            </div>
+            <label for="taskDeadline" data-i18n-en="Deadline (local time)">截止时间（本地时间）</label><input id="taskDeadline" type="datetime-local" required>
+            <button class="primary-btn full-width" id="saveTask" type="submit" data-i18n-en="Add task +">添加任务 ＋</button>
+            <button class="text-btn" id="cancelEdit" type="button" hidden data-i18n-en="Cancel editing">取消编辑</button>
+          </form>
+        </section>
+        <section class="planner-panel preferences-panel">
+          <div class="panel-heading"><div><p class="eyebrow">YOUR RHYTHM</p><h2 data-i18n-en="Planning preferences">规划偏好</h2></div></div>
+          <form id="preferencesForm">
+            <div class="form-row"><div><label for="workStart" data-i18n-en="Day starts">开始时间</label><input id="workStart" type="time" step="900" value="09:00" required></div><div><label for="workEnd" data-i18n-en="Day ends">结束时间</label><input id="workEnd" type="time" step="900" value="18:00" required></div></div>
+            <label for="focusTime" data-i18n-en="Preferred focus time">偏好的专注时段</label><select id="focusTime"><option value="morning" data-i18n-en="Earlier in the day">优先上午</option><option value="afternoon" data-i18n-en="Afternoon, when available">优先下午</option></select>
+            <button class="secondary-btn full-width" type="submit" data-i18n-en="Save preferences">保存偏好</button>
+          </form>
+          <p class="field-help" data-i18n-en="Tasks use a single uninterrupted block. Fixed events are protected. High priority comes first, then the earliest deadline.">任务安排为一个连续时段，避开固定安排；优先排高优先级任务，再按截止时间排序。</p>
+        </section>
+      </aside>
+      <div class="schedule-column">
+        <section class="planner-panel schedule-panel">
+          <div class="panel-heading"><div><p class="eyebrow">02 / PLAN & ADAPT</p><h2 data-i18n-en="Your time, in view.">你的时间，一目了然。</h2></div><span class="status-pill" data-i18n-en="Confirmed schedule">已确认日程</span></div>
+          <div class="date-navigation"><button id="prevDay" class="utility-btn" type="button" aria-label="前一天" data-i18n-label-en="Previous day">←</button><h3 id="selectedDate"></h3><button id="nextDay" class="utility-btn" type="button" aria-label="后一天" data-i18n-label-en="Next day">→</button><button id="todayButton" class="text-btn" type="button" data-i18n-en="Today">今天</button></div>
+          <div id="dayStrip" class="day-strip" aria-label="选择日期" data-i18n-label-en="Choose a day"></div>
+          <div id="scheduleList" class="schedule-list"></div>
+          <div class="schedule-legend"><span><i class="legend-dot"></i><span data-i18n-en="Planned task">规划任务</span></span><span><i class="legend-dot fixed"></i><span data-i18n-en="Fixed event">固定安排</span></span></div>
+        </section>
+        <section class="planner-panel proposal-panel" aria-labelledby="proposalTitle">
+          <div class="panel-heading"><div><p class="eyebrow">03 / REVIEW</p><h2 id="proposalTitle" data-i18n-en="A plan you can decide on.">先看建议，再做决定。</h2></div><button id="generatePlan" class="primary-btn" type="button" data-i18n-en="Generate plan ↗">生成排程建议 ↗</button></div>
+          <p class="panel-copy" data-i18n-en="A proposal uses deadlines, priorities, available time, and fixed events. Your current schedule changes only when you confirm.">结合截止时间、优先级、可用时段与固定安排生成建议，确认后才会替换当前任务日程。</p>
+          <div id="proposalContent" class="proposal-content"></div>
+          <div id="proposalActions" class="proposal-actions" hidden><button id="confirmPlan" class="primary-btn" type="button" data-i18n-en="Confirm this plan">确认采用此计划</button><button id="discardPlan" class="secondary-btn" type="button" data-i18n-en="Discard proposal">放弃建议</button></div>
+          <p class="field-help" id="lastConfirmed"></p>
+        </section>
+        <section class="planner-panel">
+          <div class="panel-heading"><div><p class="eyebrow">TASK POOL</p><h2 data-i18n-en="Everything on your list">任务池</h2></div><span class="subtle" data-i18n-en="Edit · Complete · Replan">编辑 · 完成 · 重排</span></div>
+          <div id="taskList" class="task-list"></div>
+        </section>
+        <section class="planner-panel">
+          <details id="fixedDetails"><summary><span data-i18n-en="Fixed events">固定安排</span><span class="subtle" data-i18n-en="Protect meetings and breaks +">预留会议与休息时间 ＋</span></summary>
+            <p class="panel-copy" data-i18n-en="These blocks stay in place during replanning. Add meetings, classes, or breaks here.">会议、课程和休息时间不会被重排移动，可在这里提前预留。</p>
+            <form id="eventForm" class="event-form"><div><label for="eventTitle" data-i18n-en="Event name">安排名称</label><input id="eventTitle" maxlength="100" required></div><div><label for="eventDate" data-i18n-en="Date">日期</label><input id="eventDate" type="date" required></div><div><label for="eventStart" data-i18n-en="From">开始</label><input id="eventStart" type="time" value="12:00" required></div><div><label for="eventEnd" data-i18n-en="To">结束</label><input id="eventEnd" type="time" value="13:00" required></div><button class="secondary-btn" type="submit" data-i18n-en="Add event">添加安排</button></form>
+            <div id="eventList" class="event-list"></div>
+          </details>
+        </section>
+      </div>
+    </div>
+    <footer class="planner-footer"><span>FORGEOS / <span data-i18n-en="Dynamic Time Planning">动态时间规划</span></span><span data-i18n-en="Next: agent-assisted planning · knowledge links · project workflows">后续接入：智能体辅助规划 · 知识关联 · 项目工作流</span></footer>
+  </main>
+  <script src="../assets/js/i18n.js?v=20261008"></script>
+  <script src="../assets/js/ui.js?v=20261008"></script>
+  <script src="../assets/js/planner-core.js?v=20261008"></script>
+  <script src="../assets/js/planner.js?v=20261008"></script>
+</body>
+</html>

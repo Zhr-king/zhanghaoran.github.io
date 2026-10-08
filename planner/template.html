@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#050a18">
+  <title data-i18n-en="Time Planning · Design Preview · ForgeOS">时间规划 · 页面样板 · ForgeOS</title>
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261008">
+  <link rel="stylesheet" href="../assets/css/planner-template.css?v=20261008">
+  <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+</head>
+<body class="template-page">
+  <svg class="template-symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v5m10-5v5M3 11h18m-13 4h3m3 0h2m-8 3h3"/></symbol>
+    <symbol id="icon-book" viewBox="0 0 24 24"><path d="M12 5v16M3 4c3-1 6-1 9 1 3-2 6-2 9-1v15c-3-1-6-1-9 2-3-3-6-3-9-2z"/></symbol>
+    <symbol id="icon-flow" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h6a3 3 0 0 1 3 3v6M6 9v6a3 3 0 0 0 3 3h6"/></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="icon-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5zM20 2v4m-2-2h4"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="icon-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  </svg>
+  <a class="template-skip" href="#templateMain" data-i18n-en="Skip to workspace">跳转到工作台</a>
+  <aside class="template-sidebar">
+    <a class="template-logo" href="../" aria-label="ForgeOS 首页" data-i18n-label-en="ForgeOS home">
+      <svg viewBox="0 0 40 44" fill="none" aria-hidden="true"><path d="M20 2 37 12v20L20 42 3 32V12Z" stroke="currentColor"/><path d="m23 10-12 16h9l-3 9 12-17h-9z" fill="currentColor"/></svg>
+      <span>FORGE<span class="logo-accent">OS</span><small>PERSONAL WORKSPACE</small></span>
+    </a>
+    <div class="sidebar-caption" data-i18n-en="WORKSPACE">工作空间</div>
+    <nav class="template-nav" aria-label="模块导航" data-i18n-label-en="Workspace modules">
+      <a href="../"><svg class="template-icon"><use href="#icon-grid"/></svg><span data-i18n-en="Overview">工作间总览</span></a>
+      <a class="is-active" href="#dayBoard" aria-current="page"><svg class="template-icon"><use href="#icon-calendar"/></svg><span data-i18n-en="Time planning">动态时间规划</span><span class="nav-indicator"></span></a>
+      <div class="nav-upcoming"><svg class="template-icon"><use href="#icon-book"/></svg><span data-i18n-en="Knowledge">知识检索</span><small data-i18n-en="SOON">筹备中</small></div>
+      <div class="nav-upcoming"><svg class="template-icon"><use href="#icon-flow"/></svg><span data-i18n-en="Workflows">个人工作流</span><small data-i18n-en="SOON">筹备中</small></div>
+    </nav>
+    <div class="sidebar-caption section-caption" data-i18n-en="QUICK ACCESS">快捷入口</div>
+    <nav class="template-nav template-shortcuts" aria-label="快捷入口" data-i18n-label-en="Quick access">
+      <a href="#taskPool"><svg class="template-icon"><use href="#icon-check"/></svg><span data-i18n-en="Task list">待办清单</span></a>
+      <a href="./#taskTitle"><svg class="template-icon"><use href="#icon-plus"/></svg><span data-i18n-en="Create a task">创建任务</span></a>
+    </nav>
+    <div class="sidebar-note"><span class="sidebar-note-mark">✦</span><p data-i18n-en="A little structure. More room to focus.">让计划有条理，<br>让专注有余地。</p><span>PLAN. FOCUS. EVOLVE.</span></div>
+    <div class="sidebar-profile"><span class="profile-avatar">F</span><div><strong data-i18n-en="Personal workspace">个人工作间</strong><small><i></i><span data-i18n-en="Local design preview">本地设计预览</span></small></div></div>
+  </aside>
+  <div class="template-content">
+    <header class="template-topbar">
+      <div class="template-breadcrumb"><span data-i18n-en="Workspace">工作空间</span><span>/</span><strong data-i18n-en="Time planning">动态时间规划</strong></div>
+      <div class="template-top-actions"><span class="template-version">DESIGN / 01</span><button class="template-icon-button" id="languageToggle" type="button">CN</button><button class="template-theme-button" id="themeToggle" type="button" aria-label="切换主题"><span class="theme-orbit" aria-hidden="true"></span><span id="themeLabel">夜色</span></button></div>
+    </header>
+    <main class="template-main" id="templateMain">
+      <section class="template-welcome">
+        <div class="template-welcome-copy"><p class="template-eyebrow"><span></span><span data-i18n-en="YOUR DAY, WITH INTENTION">让每一天，都有方向</span></p><h1 data-i18n-en="Find your rhythm.">找到你的时间节奏。</h1><p class="welcome-description" data-i18n-en="A clear plan. Space to focus. Freedom to adapt.">规划有序，专注当下，也为变化留一点余地。</p><div class="welcome-meta"><span id="templateDate"></span><span class="meta-divider"></span><span class="template-preview-label" data-i18n-en="Design preview · Sample data">页面样板 · 示例数据</span></div></div>
+        <div class="rhythm-visual" aria-hidden="true"><div class="rhythm-orbit orbit-outer"></div><div class="rhythm-orbit orbit-inner"></div><div class="rhythm-cross cross-one"></div><div class="rhythm-cross cross-two"></div><span class="orbit-point"></span><div class="rhythm-center"><svg class="template-icon"><use href="#icon-clock"/></svg><span>YOUR PACE</span></div><span class="orbit-label label-focus">01 / FOCUS</span><span class="orbit-label label-flow">02 / FLOW</span><div class="rhythm-trace"></div></div>
+      </section>
+      <section class="template-stats" aria-label="示例日程概览" data-i18n-label-en="Sample schedule overview">
+        <div class="template-stat"><span class="stat-icon blue"><svg class="template-icon"><use href="#icon-check"/></svg></span><div><span class="template-stat-label" data-i18n-en="Tasks remaining">待完成任务</span><strong id="sampleRemaining">4 <small data-i18n-en="tasks">项</small></strong></div><span class="stat-footnote" data-i18n-en="One step at a time">一步一步，稳步推进</span></div>
+        <div class="template-stat"><span class="stat-icon cyan"><svg class="template-icon"><use href="#icon-clock"/></svg></span><div><span class="template-stat-label" data-i18n-en="Time planned">已安排时间</span><strong id="samplePlanned">5 <small>h</small></strong></div><span class="stat-footnote" data-i18n-en="A little structure helps">为重要的事预留时间</span></div>
+        <div class="template-stat"><span class="stat-icon violet"><svg class="template-icon"><use href="#icon-spark"/></svg></span><div><span class="template-stat-label" data-i18n-en="Room to adapt">弹性时间</span><strong id="sampleFree">4 <small>h</small></strong></div><span class="stat-footnote" data-i18n-en="Leave space for life">给变化留一点空间</span></div>
+      </section>
+      <div class="template-workbench">
+        <section class="template-board" id="dayBoard" aria-labelledby="boardHeading">
+          <div class="board-toolbar"><div><p class="template-eyebrow">YOUR SCHEDULE</p><h2 id="boardHeading" data-i18n-en="The shape of your day">一天的安排</h2></div><a class="template-primary" href="./#taskTitle"><svg class="template-icon"><use href="#icon-plus"/></svg><span data-i18n-en="New task">新建任务</span></a></div>
+          <div class="board-datebar"><div><button id="samplePrev" class="template-icon-button" type="button" aria-label="前一天" data-i18n-label-en="Previous day">‹</button><strong id="sampleMonth"></strong><button id="sampleNext" class="template-icon-button" type="button" aria-label="后一天" data-i18n-label-en="Next day">›</button></div><button id="sampleToday" class="template-small-button" type="button" data-i18n-en="Today">今天</button></div>
+          <div id="sampleWeek" class="template-week" aria-label="选择日期" data-i18n-label-en="Choose a day"></div>
+          <div class="timeline-caption"><span data-i18n-en="TIME">时间</span><span data-i18n-en="DAILY TIMELINE">当日时间轴</span><span class="timeline-zone" data-i18n-en="LOCAL TIME">本地时间</span></div>
+          <div class="template-timeline"><div class="timeline-hours" aria-hidden="true"><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span><span>14:00</span><span>15:00</span><span>16:00</span><span>17:00</span><span>18:00</span></div><div id="sampleEvents" class="timeline-events" aria-label="示例日程" data-i18n-label-en="Sample schedule"></div></div>
+          <div class="template-legend"><span><i class="legend-blue"></i><span data-i18n-en="Deep work">深度工作</span></span><span><i class="legend-cyan"></i><span data-i18n-en="Learning">学习积累</span></span><span><i class="legend-violet"></i><span data-i18n-en="Fixed event">固定安排</span></span></div>
+        </section>
+        <aside class="template-right-column">
+          <section class="template-assistant" aria-labelledby="assistantHeading"><div class="assistant-heading"><span class="assistant-symbol"><svg class="template-icon"><use href="#icon-spark"/></svg></span><div><h2 id="assistantHeading" data-i18n-en="Planning insights">规划建议</h2><p data-i18n-en="A calmer way to get things done">让节奏更从容一点</p></div><span class="sample-tag" data-i18n-en="SAMPLE">示例</span></div><div class="assistant-message"><p data-i18n-en="A good day has breathing room.">好的计划，也有留白。</p><span data-i18n-en="Keep your longest focus block in the morning. Leave the afternoon buffer open for anything unexpected.">把上午留给需要专注的工作，下午预留弹性时段，应对临时变化。</span></div><div class="capacity-row"><span data-i18n-en="Day capacity">日程占用</span><strong id="sampleCapacity">56%</strong></div><div class="capacity-track"><span id="sampleCapacityBar"></span></div><div class="capacity-labels"><span id="sampleCapacityLabel"></span><span data-i18n-en="9 h available">可用 9 小时</span></div><a href="./" class="template-assistant-link"><span data-i18n-en="Try dynamic replanning">体验动态重排</span><svg class="template-icon"><use href="#icon-arrow"/></svg></a></section>
+          <section class="template-task-panel" id="taskPool"><div class="task-panel-heading"><h2 data-i18n-en="On your list">待办清单</h2><span id="sampleTaskCount">04</span></div><p class="task-panel-description" data-i18n-en="Small steps, meaningful progress.">完成一件，就离目标更近一点。</p><div id="sampleTasks" class="template-task-list"></div><a class="template-all-tasks" href="./#taskList"><span data-i18n-en="Open task workspace">进入任务工作台</span><svg class="template-icon"><use href="#icon-arrow"/></svg></a></section>
+          <section class="template-focus-note"><div><svg class="template-icon"><use href="#icon-book"/></svg><span data-i18n-en="MAKE IT COUNT">让积累发生</span></div><p data-i18n-en="Finish a task. Keep the learning.">完成任务，也留下收获。</p><small data-i18n-en="Next: connect your plans with notes, knowledge, and projects.">下一步，让计划与笔记、知识和项目相连。</small><span class="note-decoration" aria-hidden="true">↗</span></section>
+        </aside>
+      </div>
+      <footer class="template-footer"><span><span class="footer-square"></span>FORGEOS <span class="footer-divider">/</span><span data-i18n-en="A workspace that grows with you.">与你一起成长的工作间。</span></span><span data-i18n-en="Sample schedule · Changes here are not saved">示例日程 · 本页操作不保存</span></footer>
+      <p class="template-announcement" id="sampleFeedback" role="status" aria-live="polite"></p>
+    </main>
+  </div>
+  <noscript><p class="template-noscript">此样板的示例日程需要启用 JavaScript。 Enable JavaScript to view the sample schedule.</p></noscript>
+  <script src="../assets/js/i18n.js?v=20261008"></script>
+  <script src="../assets/js/ui.js?v=20261008"></script>
+  <script src="../assets/js/planner-template.js?v=20261008"></script>
+</body>
+</html>

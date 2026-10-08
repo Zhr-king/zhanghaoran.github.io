@@ -11,4 +11,10 @@ ForgeOS project
 
 分享图源文件为 `assets/images/social-card.svg`，发布使用同目录下的 PNG。执行 `node tests/language.cjs --render-social` 可重新生成 1200×630 分享图并运行检查。
 
-独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 仅收录已存在的首页；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。
+动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。当前尚未连接 AI 智能体或外部日历；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
+
+本地运行 `python -m http.server 5500 --bind 127.0.0.1`，打开 `http://127.0.0.1:5500/planner/` 即可体验。也可使用 VS Code 的“预览网页”任务。
+
+页面设计样板位于 `/planner/template.html`，采用深蓝、冰蓝和青色的工作台布局，支持中英文、明暗主题、日期切换与示例任务勾选。样板使用独立的展示数据，不读取或修改真实规划任务，也不保存示例操作。规划页右上角的“设计样板”可直接进入。
+
+独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页和时间规划页；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。
