@@ -8,7 +8,7 @@
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#050a18">
   <meta property="og:title" data-i18n-content-en="ForgeOS // Personal Workshop OS" content="ForgeOS // 个人工作间操作系统">
-  <meta property="og:description" data-i18n-content-en="Forge your knowledge and code — Study Assistant, Code Forge, Knowledge Base, and Task Engine." content="锻造你的知识与代码 —— 学习助手 · 代码工坊 · 知识引擎 · 任务矩阵。">
+  <meta property="og:description" data-i18n-content-en="Forge your knowledge and code — Study Assistant, Code Forge, Knowledge Base, and Schedule." content="锻造你的知识与代码 —— 学习助手 · 代码工坊 · 知识引擎 · 任务矩阵。">
   <meta property="og:type" content="website">
   <link rel="canonical" href="https://forgeos.work/">
   <meta property="og:url" content="https://forgeos.work/">
@@ -27,7 +27,7 @@
   </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 57 17.5v29L32 61 7 46.5v-29z' fill='%230a1a3d' stroke='%233b82f6' stroke-width='3'/%3E%3Cpath d='M35 12 20 36h9l-3 16 15-24h-9z' fill='%237dd3fc'/%3E%3C/svg%3E">
   <!-- 更新站点后请把下面 CSS/JS 的 ?v= 改成新日期，访客浏览器会自动拉取新文件（防缓存错乱） -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261008">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261009">
   <script>
     (function () {
       var el = document.documentElement;
@@ -86,7 +86,7 @@
         <p class="boot-line"><span data-i18n-en="&gt; FORGE CORE init …">&gt; FORGE CORE 初始化 …</span></p>
         <p class="boot-line"><span data-i18n-en="&gt; Loading [RENDERER]">&gt; 挂载渲染管线 [RENDERER]</span></p>
         <p class="boot-line"><span data-i18n-en="&gt; Loading [STUDY.SYS]">&gt; 接入学习助手 [STUDY.SYS]</span></p>
-        <p class="boot-line"><span data-i18n-en="&gt; Syncing [MOD-03]">&gt; 同步知识库   [MOD-03]</span></p>
+        <p class="boot-line"><span data-i18n-en="&gt; Syncing [MOD-04]">&gt; 同步知识库   [MOD-04]</span></p>
         <p class="boot-line"><span data-i18n-en="&gt; Calibrating [INPUT.X]">&gt; 校准交互矩阵 [INPUT.X]</span></p>
         <p class="boot-line"><span data-i18n-en="&gt; READY // Welcome back">&gt; SYSTEM READY // 欢迎回家，指挥官</span></p>
       </div>
@@ -138,7 +138,7 @@
 
       <div class="float-chip fc-1" style="--depth:26;--accent:#60a5fa"><div class="fc-body"><span class="fc-dot"></span>STUDY.SYS</div></div>
       <div class="float-chip fc-2" style="--depth:36;--accent:#22d3ee"><div class="fc-body"><span class="fc-dot"></span>CODE.FORGE</div></div>
-      <div class="float-chip fc-3" style="--depth:20;--accent:#2dd4bf"><div class="fc-body"><span class="fc-dot"></span>TASK.ENGINE</div></div>
+      <div class="float-chip fc-3" style="--depth:20;--accent:#2dd4bf"><div class="fc-body"><span class="fc-dot"></span>SCHEDULE</div></div>
       <div class="float-chip fc-4" style="--depth:32;--accent:#a78bfa"><div class="fc-body"><span class="fc-dot"></span>IDEA.CORE</div></div>
 
       <div class="hero-content">
@@ -201,13 +201,30 @@
         </div>
 
         <div class="modules-grid">
-          <article class="card reveal ac-blue" data-tilt data-delay="0">
+          <article class="card reveal ac-teal" data-tilt data-delay="0">
+            <span class="glare" aria-hidden="true"></span>
+            <div class="card-top">
+              <div class="icon-box" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="m3 6 1.5 1.5L7.5 4"/><path d="m3 12 1.5 1.5L7.5 10"/><path d="m3 18 1.5 1.5L7.5 16"/></svg>
+              </div>
+              <span class="mod-id">MOD-01</span>
+            </div>
+            <h3 class="mod-title"><span data-i18n-en="Schedule">动态时间规划</span></h3>
+            <p class="mod-en">SCHEDULE</p>
+            <p class="mod-desc"><span data-i18n-en="Turn tasks into a flexible schedule. Check conflicts, confirm your plan, and adapt when things change.">将任务转为可调整的日程，结合截止时间与个人习惯检查冲突，经你确认后动态重排。</span></p>
+            <div class="card-bottom">
+
+              <a class="btn-mini" href="planner/"><span data-i18n-en="Open planner →">进入规划 →</span></a>
+            </div>
+          </article>
+
+          <article class="card reveal ac-blue" data-tilt data-delay="70">
             <span class="glare" aria-hidden="true"></span>
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5 12 5l10 4.5L12 14 2 9.5z"/><path d="M6 11.5V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.5"/><path d="M22 10v5"/></svg>
               </div>
-              <span class="mod-id">MOD-01</span>
+              <span class="mod-id">MOD-02</span>
             </div>
             <h3 class="mod-title"><span data-i18n-en="Study Assistant">学习助手</span></h3>
             <p class="mod-en">STUDY ASSISTANT</p>
@@ -218,13 +235,13 @@
             </div>
           </article>
 
-          <article class="card reveal ac-cyan" data-tilt data-delay="70">
+          <article class="card reveal ac-cyan" data-tilt data-delay="140">
             <span class="glare" aria-hidden="true"></span>
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m13.5 4-3 16"/></svg>
               </div>
-              <span class="mod-id">MOD-02</span>
+              <span class="mod-id">MOD-03</span>
             </div>
             <h3 class="mod-title"><span data-i18n-en="Code Forge">代码工坊</span></h3>
             <p class="mod-en">CODE FORGE</p>
@@ -235,13 +252,13 @@
             </div>
           </article>
 
-          <article class="card reveal ac-violet" data-tilt data-delay="140">
+          <article class="card reveal ac-violet" data-tilt data-delay="210">
             <span class="glare" aria-hidden="true"></span>
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
               </div>
-              <span class="mod-id">MOD-03</span>
+              <span class="mod-id">MOD-04</span>
             </div>
             <h3 class="mod-title"><span data-i18n-en="Knowledge Base">知识库</span></h3>
             <p class="mod-en">KNOWLEDGE BASE</p>
@@ -249,23 +266,6 @@
             <div class="card-bottom">
 
               <button class="btn-mini" type="button" data-toast="「知识库」模块正在锻造中，敬请期待 ⚒" data-toast-en="Knowledge Base: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
-            </div>
-          </article>
-
-          <article class="card reveal ac-teal" data-tilt data-delay="210">
-            <span class="glare" aria-hidden="true"></span>
-            <div class="card-top">
-              <div class="icon-box" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="m3 6 1.5 1.5L7.5 4"/><path d="m3 12 1.5 1.5L7.5 10"/><path d="m3 18 1.5 1.5L7.5 16"/></svg>
-              </div>
-              <span class="mod-id">MOD-04</span>
-            </div>
-            <h3 class="mod-title"><span data-i18n-en="Dynamic Time Planning">动态时间规划</span></h3>
-            <p class="mod-en">DYNAMIC TIME PLANNING</p>
-            <p class="mod-desc"><span data-i18n-en="Turn tasks into a flexible schedule. Check conflicts, confirm your plan, and adapt when things change.">将任务转为可调整的日程，结合截止时间与个人习惯检查冲突，经你确认后动态重排。</span></p>
-            <div class="card-bottom">
-
-              <a class="btn-mini" href="planner/"><span data-i18n-en="Open planner →">进入规划 →</span></a>
             </div>
           </article>
 
