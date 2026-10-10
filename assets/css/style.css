@@ -532,8 +532,9 @@ body.ready .hero h1 .ltr { animation: ltrIn .7s cubic-bezier(.18, .8, .3, 1.05) 
 .hero-sub b { color: var(--ink-strong); font-weight: 600; }
 
 .type-row {
-  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px;
-  width: min(100%, 500px);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: fit-content;
+  max-width: 100%;
   min-height: 48px;
   margin: 14px auto 0;
   font-family: var(--font-mono);
@@ -541,8 +542,8 @@ body.ready .hero h1 .ltr { animation: ltrIn .7s cubic-bezier(.18, .8, .3, 1.05) 
   color: var(--cyan);
 }
 .type-row .prompt { color: var(--text-faint); white-space: nowrap; flex-shrink: 0; }
-#typewriter { min-width: 0; overflow-wrap: anywhere; text-align: left; }
-.type-output { min-width: 0; text-align: left; overflow-wrap: anywhere; }
+#typewriter { min-width: 0; overflow-wrap: anywhere; }
+.type-output { min-width: 0; text-align: center; overflow-wrap: anywhere; }
 .type-caret {
   margin-left: 6px; vertical-align: -.15em;
   flex-shrink: 0;
@@ -1023,7 +1024,7 @@ html[lang="en"] .mod-en { display: none; }
   .f-links { gap: 4px 16px; }
   #themeToggle { width: 44px; justify-content: center; }
   .tt-label { display: none; }
-  .hero h1 { letter-spacing: .04em; }
+  .hero h1 { letter-spacing: .04em; text-indent: .04em; }
   .hero-sub { font-size: 15px; }
   .stat-num { font-size: 21px; }
   .stat-lbl { letter-spacing: .08em; }
