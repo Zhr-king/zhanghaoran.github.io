@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#050a18">
+  <title data-i18n-en="Agent accounts · Schedule · ForgeOS">智能体账号 · Schedule · ForgeOS</title>
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261010">
+  <link rel="stylesheet" href="../assets/css/planner.css?v=20261010">
+  <link rel="stylesheet" href="../assets/css/agent.css?v=20261010c">
+  <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
+</head>
+<body class="planner-page agent-page">
+  <a class="skip-link" href="#agentWorkspace" data-i18n-en="Skip to agent accounts">跳转到智能体账号</a>
+  <header class="planner-header">
+    <a class="planner-brand" href="../"><span class="brand-mark" aria-hidden="true">F</span> FORGEOS <span class="brand-divider">/</span><span>AGENTS</span></a>
+    <div class="header-actions"><a class="back-link" href="./" data-i18n-en="← Schedule">← 返回 Schedule</a><button class="utility-btn" id="languageToggle" type="button">CN</button><button class="utility-btn" id="themeToggle" type="button" aria-label="切换主题"><span id="themeLabel">夜色</span></button></div>
+  </header>
+  <main class="planner-shell agent-shell" id="agentWorkspace">
+    <section class="planner-intro">
+      <div><p class="eyebrow">SCHEDULE / YOUR AGENTS</p><h1 data-i18n-en="Your agents. Your choice.">你的智能体，由你选择。</h1><p class="intro-copy" data-i18n-en="Sign in to your agents, then choose a default for Schedule.">登录智能体，再为 Schedule 选择你的默认助手。</p></div>
+      <span class="prototype-badge" data-i18n-en="FRONTEND DEMO">前端演示</span>
+    </section>
+    <div class="agent-preview-notice"><span aria-hidden="true">✦</span><p data-i18n-en="Try demo sign-in and default selection. These states are saved only in this browser; real account authorization is not connected.">体验演示登录与默认选择。状态仅保存在当前浏览器，尚未接入真实账号授权。</p></div>
+    <p class="agent-form-feedback" id="agentFeedback" role="status" aria-live="polite"></p>
+    <div class="agent-settings-layout">
+      <section class="planner-panel agent-settings-panel" aria-label="智能体管理" data-i18n-label-en="Agent management">
+        <div class="agent-tabs" role="tablist" aria-label="智能体功能" data-i18n-label-en="Agent functions">
+          <button id="defaultTab" type="button" role="tab" aria-selected="true" aria-controls="defaultPanel" data-agent-tab="default"><span class="agent-tab-number" aria-hidden="true">01</span><span data-i18n-en="Default agent">选择默认智能体</span></button>
+          <button id="loginTab" type="button" role="tab" aria-selected="false" aria-controls="loginPanel" tabindex="-1" data-agent-tab="login"><span class="agent-tab-number" aria-hidden="true">02</span><span data-i18n-en="Sign in">登录智能体</span></button>
+        </div>
+        <section id="defaultPanel" role="tabpanel" aria-labelledby="defaultTab">
+          <div class="agent-section-heading"><h2 data-i18n-en="Choose from your signed-in agents">从已登录账号中选择</h2><span class="agent-count" id="signedInCount"></span></div>
+          <p class="agent-description" data-i18n-en="Choose an account below and save it as the default for Schedule.">选择一个已登录账号，保存后作为 Schedule 的默认智能体。</p>
+          <div class="agent-empty" id="emptyAccounts">
+            <div class="agent-empty-orbit" aria-hidden="true"><span>✦</span><i></i><i></i></div>
+            <h3 data-i18n-en="Your next planning partner">让规划多一个帮手</h3>
+            <p data-i18n-en="No agents are signed in yet. Start with one of the five providers.">还没有已登录的智能体。先从五个选项中登录一个吧。</p>
+            <button class="primary-btn" id="goToLogin" type="button" data-i18n-en="Sign in to an agent →">去登录智能体 →</button>
+          </div>
+          <form id="defaultAgentForm" hidden>
+            <fieldset class="agent-account-fieldset"><legend class="agent-sr-only" data-i18n-en="Signed-in agents">已登录的智能体</legend><div id="signedInAccounts"></div></fieldset>
+            <div class="agent-form-actions"><button class="primary-btn" id="saveDefaultAgent" type="submit" disabled data-i18n-en="Save default agent">保存默认智能体</button><button class="text-btn" id="clearDefaultAgent" type="button" hidden data-i18n-en="Clear default">取消默认选择</button></div>
+            <p class="field-help" data-i18n-en="Demo accounts only. Schedule continues to use local planning rules.">当前为演示账号，Schedule 仍使用本地规则规划。</p>
+          </form>
+        </section>
+        <section id="loginPanel" role="tabpanel" aria-labelledby="loginTab" hidden>
+          <div class="agent-section-heading"><h2 data-i18n-en="Choose an agent to sign in">选择要登录的智能体</h2><span class="agent-count" data-i18n-en="5 providers">5 个选项</span></div>
+          <p class="agent-description" data-i18n-en="Keep multiple agents signed in. Choose your default separately.">可以同时登录多个智能体，再单独选择你偏好的默认账号。</p>
+          <div class="agent-provider-grid" id="agentProviderList"></div>
+          <p class="field-help" data-i18n-en="Sign-in is simulated for this frontend demo. No password or API key is needed.">此处为前端演示登录，无需填写密码或 API Key。</p>
+        </section>
+      </section>
+      <aside class="agent-info-column">
+        <section class="planner-panel agent-status-panel">
+          <p class="eyebrow">YOUR DEFAULT</p><h2 data-i18n-en="Schedule's planning partner">Schedule 的规划搭档</h2>
+          <div class="agent-current"><span class="agent-provider-mark" id="defaultAgentMark" aria-hidden="true">✦</span><div><strong id="defaultAgentName"></strong><span class="agent-state" data-agent-state data-state="disconnected"></span></div></div>
+          <p class="agent-description" id="defaultAgentDescription"></p>
+          <div class="agent-account-total"><span data-i18n-en="Signed-in agents (demo)">已登录智能体（演示）</span><strong id="accountTotal">0 / 5</strong></div>
+          <button class="secondary-btn full-width" id="manageLogins" type="button" data-i18n-en="Manage sign-ins →">管理登录 →</button>
+        </section>
+        <section class="planner-panel agent-guide-panel">
+          <p class="eyebrow">A SIMPLE FLOW</p>
+          <ol class="agent-steps"><li><span>01</span><div><strong data-i18n-en="Sign in to an agent">登录智能体</strong><small data-i18n-en="Choose one of the five providers">从五个智能体中选择</small></div></li><li><span>02</span><div><strong data-i18n-en="Make it your default">设为默认智能体</strong><small data-i18n-en="Switch between signed-in accounts">随时在已登录账号间切换</small></div></li><li><span>03</span><div><strong data-i18n-en="Return to your schedule">返回你的日程</strong><small data-i18n-en="Continue planning with local rules">继续体验本地时间规划</small></div></li></ol>
+          <a class="agent-return-link" href="./" data-i18n-en="Open Schedule →">打开 Schedule →</a>
+        </section>
+      </aside>
+    </div>
+    <footer class="planner-footer"><span>FORGEOS / SCHEDULE / AGENTS</span><span>Codex · Claude · Gemini · DeepSeek V4 · Kimi</span></footer>
+    <noscript><p class="agent-preview-notice">请启用 JavaScript 以体验智能体登录和默认选择。 Enable JavaScript to try agent sign-in and default selection.</p></noscript>
+  </main>
+  <dialog class="agent-login-dialog" id="agentLoginDialog" aria-labelledby="loginDialogTitle" aria-describedby="loginDialogDescription">
+    <div class="agent-dialog-top"><span class="eyebrow">AGENT SIGN-IN</span><button class="utility-btn agent-dialog-close" id="closeLoginDialog" type="button" aria-label="关闭登录窗口" data-i18n-label-en="Close sign-in dialog" autofocus>×</button></div>
+    <span class="agent-provider-mark" id="loginProviderMark" aria-hidden="true"></span>
+    <h2 id="loginDialogTitle"></h2>
+    <p class="agent-description" id="loginDialogDescription" data-i18n-en="This is a frontend demo. Continue to create a local demo account and try selecting your default agent.">这是前端演示。继续后会创建本机演示账号，供你体验默认智能体的选择与切换。</p>
+    <div class="agent-demo-detail"><span class="agent-state" data-state="demo" data-i18n-en="Demo account">演示账号</span><span data-i18n-en="Saved in this browser only">仅保存在当前浏览器</span></div>
+    <button class="primary-btn full-width" id="demoSignIn" type="button"></button>
+    <p class="field-help" data-i18n-en="Real account authorization is not connected. No password or API key is needed.">尚未接入真实账号授权，无需密码或 API Key。</p>
+    <p class="agent-form-feedback" id="agentDialogFeedback" role="status" aria-live="polite"></p>
+  </dialog>
+  <script src="../assets/js/i18n.js?v=20261010"></script>
+  <script src="../assets/js/ui.js?v=20261010"></script>
+  <script src="../assets/js/agent-settings.js?v=20261010c"></script>
+</body>
+</html>

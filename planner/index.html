@@ -15,7 +15,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://forgeos.work/planner/">
   <link rel="stylesheet" href="../assets/css/style.css?v=20261008">
-  <link rel="stylesheet" href="../assets/css/planner.css?v=20261008">
+  <link rel="stylesheet" href="../assets/css/planner.css?v=20261010">
+  <link rel="stylesheet" href="../assets/css/agent.css?v=20261010c">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
 <body class="planner-page">
@@ -38,7 +39,11 @@
       </div>
       <div class="intro-side"><span class="prototype-badge" data-i18n-en="INTERACTIVE PROTOTYPE">交互原型</span><button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button></div>
     </section>
-    <div class="prototype-note"><span class="note-dot" aria-hidden="true"></span><p data-i18n-en="Local rules preview · No AI agent connected yet. Review recognized fields before adding a task. Your data stays in this browser.">本地规则演示 · 尚未接入 AI 智能体，识别结果请核对后添加。数据仅保存在当前浏览器。</p></div>
+    <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
+      <span class="agent-glyph" aria-hidden="true">✦</span>
+      <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="No AI agent is connected yet. Schedule uses local rules; review recognized tasks before saving. Your data stays in this browser.">尚未接入 AI 智能体，当前使用本地规则规划，请核对识别结果。数据仅保存在当前浏览器。</p></div>
+      <div class="agent-entry-actions"><a class="agent-connect-link" href="agent.html#default" data-i18n-en="Choose default">选择默认智能体</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div>
+    </section>
     <noscript><p class="prototype-note">请启用 JavaScript 使用任务和排程功能。 Enable JavaScript to use the planner.</p></noscript>
     <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
     <section class="metrics" aria-label="规划概览" data-i18n-label-en="Planning overview">
@@ -113,5 +118,6 @@
   <script src="../assets/js/ui.js?v=20261008"></script>
   <script src="../assets/js/planner-core.js?v=20261008"></script>
   <script src="../assets/js/planner.js?v=20261008"></script>
+  <script src="../assets/js/agent-settings.js?v=20261010c"></script>
 </body>
 </html>

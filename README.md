@@ -17,4 +17,6 @@ ForgeOS project
 
 页面设计样板位于 `/planner/template.html`，采用深蓝、冰蓝和青色的工作台布局，支持中英文、明暗主题、日期切换与示例任务勾选。样板使用独立的展示数据，不读取或修改真实规划任务，也不保存示例操作。规划页右上角的“设计样板”可直接进入。
 
+智能体账号页位于 `/planner/agent.html`，工作台及样板页提供“选择默认智能体”和“登录智能体”两个入口。前端仅展示 Codex、Claude、Gemini、DeepSeek V4、Kimi；支持演示登录、从已登录账号中保存或切换默认智能体、取消默认及退出。状态保存在独立的 `forgeos:agent-accounts:v1` 本机存储项中。登录不会自动设置默认，退出默认账号会清除默认选择。当前为纯前端演示，无需密码或 API Key，未接入真实授权或智能体调用，Schedule 仍使用本地规则。旧服务配置不作为登录状态读取。
+
 独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页和时间规划页；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。

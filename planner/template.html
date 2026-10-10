@@ -9,6 +9,7 @@
   <title data-i18n-en="Schedule · Design Preview · ForgeOS">时间规划 · 页面样板 · ForgeOS</title>
   <link rel="stylesheet" href="../assets/css/style.css?v=20261008">
   <link rel="stylesheet" href="../assets/css/planner-template.css?v=20261008">
+  <link rel="stylesheet" href="../assets/css/agent.css?v=20261010c">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
 <body class="template-page">
@@ -41,6 +42,7 @@
     <nav class="template-nav template-shortcuts" aria-label="快捷入口" data-i18n-label-en="Quick access">
       <a href="#taskPool"><svg class="template-icon"><use href="#icon-check"/></svg><span data-i18n-en="Task list">待办清单</span></a>
       <a href="./#taskTitle"><svg class="template-icon"><use href="#icon-plus"/></svg><span data-i18n-en="Create a task">创建任务</span></a>
+      <a href="agent.html#default"><svg class="template-icon"><use href="#icon-spark"/></svg><span data-i18n-en="Agent accounts">智能体账号</span></a>
     </nav>
     <div class="sidebar-note"><span class="sidebar-note-mark">✦</span><p data-i18n-en="A little structure. More room to focus.">让计划有条理，<br>让专注有余地。</p><span>PLAN. FOCUS. EVOLVE.</span></div>
     <div class="sidebar-profile"><span class="profile-avatar">F</span><div><strong data-i18n-en="Personal workspace">个人工作间</strong><small><i></i><span data-i18n-en="Local design preview">本地设计预览</span></small></div></div>
@@ -48,7 +50,7 @@
   <div class="template-content">
     <header class="template-topbar">
       <div class="template-breadcrumb"><span data-i18n-en="Workspace">工作空间</span><span>/</span><strong data-i18n-en="Schedule">动态时间规划</strong></div>
-      <div class="template-top-actions"><span class="template-version">DESIGN / 01</span><button class="template-icon-button" id="languageToggle" type="button">CN</button><button class="template-theme-button" id="themeToggle" type="button" aria-label="切换主题"><span class="theme-orbit" aria-hidden="true"></span><span id="themeLabel">夜色</span></button></div>
+      <div class="template-top-actions"><a class="agent-top-link" href="agent.html#default"><svg class="template-icon"><use href="#icon-spark"/></svg><span data-i18n-en="Agent accounts">智能体账号</span></a><button class="template-icon-button" id="languageToggle" type="button">CN</button><button class="template-theme-button" id="themeToggle" type="button" aria-label="切换主题"><span class="theme-orbit" aria-hidden="true"></span><span id="themeLabel">夜色</span></button></div>
     </header>
     <main class="template-main" id="templateMain">
       <section class="template-welcome">
@@ -70,6 +72,7 @@
           <div class="template-legend"><span><i class="legend-blue"></i><span data-i18n-en="Deep work">深度工作</span></span><span><i class="legend-cyan"></i><span data-i18n-en="Learning">学习积累</span></span><span><i class="legend-violet"></i><span data-i18n-en="Fixed event">固定安排</span></span></div>
         </section>
         <aside class="template-right-column">
+          <section class="agent-mini-card"><div class="agent-banner-title"><h2 data-i18n-en="Planning agent">规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="No default agent selected">尚未选择默认智能体</span></div><p data-i18n-en="Choose a default or try agent sign-in. Frontend demo; current insights use sample data.">选择默认智能体，或体验智能体登录。当前为前端演示，规划建议使用示例数据。</p><div class="agent-entry-actions"><a class="agent-connect-link" href="agent.html#default" data-i18n-en="Choose default">选择默认</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div></section>
           <section class="template-assistant" aria-labelledby="assistantHeading"><div class="assistant-heading"><span class="assistant-symbol"><svg class="template-icon"><use href="#icon-spark"/></svg></span><div><h2 id="assistantHeading" data-i18n-en="Planning insights">规划建议</h2><p data-i18n-en="A calmer way to get things done">让节奏更从容一点</p></div><span class="sample-tag" data-i18n-en="SAMPLE">示例</span></div><div class="assistant-message"><p data-i18n-en="A good day has breathing room.">好的计划，也有留白。</p><span data-i18n-en="Keep your longest focus block in the morning. Leave the afternoon buffer open for anything unexpected.">把上午留给需要专注的工作，下午预留弹性时段，应对临时变化。</span></div><div class="capacity-row"><span data-i18n-en="Day capacity">日程占用</span><strong id="sampleCapacity">56%</strong></div><div class="capacity-track"><span id="sampleCapacityBar"></span></div><div class="capacity-labels"><span id="sampleCapacityLabel"></span><span data-i18n-en="9 h available">可用 9 小时</span></div><a href="./" class="template-assistant-link"><span data-i18n-en="Try dynamic replanning">体验动态重排</span><svg class="template-icon"><use href="#icon-arrow"/></svg></a></section>
           <section class="template-task-panel" id="taskPool"><div class="task-panel-heading"><h2 data-i18n-en="On your list">待办清单</h2><span id="sampleTaskCount">04</span></div><p class="task-panel-description" data-i18n-en="Small steps, meaningful progress.">完成一件，就离目标更近一点。</p><div id="sampleTasks" class="template-task-list"></div><a class="template-all-tasks" href="./#taskList"><span data-i18n-en="Open task workspace">进入任务工作台</span><svg class="template-icon"><use href="#icon-arrow"/></svg></a></section>
           <section class="template-focus-note"><div><svg class="template-icon"><use href="#icon-book"/></svg><span data-i18n-en="MAKE IT COUNT">让积累发生</span></div><p data-i18n-en="Finish a task. Keep the learning.">完成任务，也留下收获。</p><small data-i18n-en="Next: connect your plans with notes, knowledge, and projects.">下一步，让计划与笔记、知识和项目相连。</small><span class="note-decoration" aria-hidden="true">↗</span></section>
@@ -83,5 +86,6 @@
   <script src="../assets/js/i18n.js?v=20261008"></script>
   <script src="../assets/js/ui.js?v=20261008"></script>
   <script src="../assets/js/planner-template.js?v=20261008"></script>
+  <script src="../assets/js/agent-settings.js?v=20261010c"></script>
 </body>
 </html>
