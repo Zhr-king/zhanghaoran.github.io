@@ -21,6 +21,6 @@ ForgeOS project
 
 智能体账号页位于 `/planner/agent.html`，工作台及样板页提供“选择默认智能体”和“登录智能体”两个入口。前端仅展示 Codex、Claude、Gemini、DeepSeek V4、Kimi；支持演示登录、从已登录账号中保存或切换默认智能体、取消默认及退出。状态保存在独立的 `forgeos:agent-accounts:v1` 本机存储项中。登录不会自动设置默认，退出默认账号会清除默认选择。当前为纯前端演示，无需密码或 API Key，未接入真实授权或智能体调用，Schedule 仍使用本地规则。旧服务配置不作为登录状态读取。
 
-学习知识库位于 `/knowledge/`，首页“学习知识库”和“知识库”卡片、规划页及样板页均有入口。支持示例科目与自建科目、阅读与回忆复习、学习记录、笔记关键词检索、Markdown/TXT 导入、文档说明和 Markdown 导出。数据保存在独立的 `forgeos:knowledge:v1` 浏览器存储中，不会上传文件。目前尚未连接 Obsidian 知识库或 AI，检索结果直接打开已有笔记；Obsidian 接入说明入口介绍后续流程。单份文档限制为 200 KB、50,000 字，库内最多 50 个科目和 200 份笔记。运行 `node tests/knowledge-browser.cjs` 检查交互、本地保存和响应式布局。
+学习知识库位于 `/knowledge/`，采用左侧历史会话、右侧对话内容和底部输入框的布局。支持新建、切换、搜索、重命名及删除对话，Enter 发送、Shift + Enter 换行；手机端历史记录为抽屉。首次使用没有预置科目、笔记或会话，由用户自行添加。科目和文档在弹窗内管理，支持 Markdown/TXT 导入、文档说明、阅读与回忆复习、学习记录及 Markdown 导出。目前尚未连接 Obsidian 或 AI；发送消息会检索本地笔记，并明确标注结果来源。笔记保存在 `forgeos:knowledge:v1`，会话独立保存在 `forgeos:knowledge-chats:v1`，删除会话不会删除文档；切换会话时保留未发送的草稿，草稿在刷新后不保留。单份文档限制为 200 KB、50,000 字，最多 50 个科目、200 份笔记及 100 个会话，每个会话最多 100 轮。运行 `node tests/knowledge-browser.cjs` 检查聊天、本地保存、中英文主题及响应式布局。
 
 独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页、时间规划页和学习知识库；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。
