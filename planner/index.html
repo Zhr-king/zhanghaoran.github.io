@@ -14,9 +14,9 @@
   <meta property="og:image" content="https://forgeos.work/assets/images/social-card.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://forgeos.work/planner/">
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261008">
-  <link rel="stylesheet" href="../assets/css/planner.css?v=20261010">
-  <link rel="stylesheet" href="../assets/css/agent.css?v=20261010c">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261011c">
+  <link rel="stylesheet" href="../assets/css/planner.css?v=20261011c">
+  <link rel="stylesheet" href="../assets/css/agent.css?v=20261011c">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
 <body class="planner-page">
@@ -24,6 +24,7 @@
   <header class="planner-header">
     <a class="planner-brand" href="../"><span class="brand-mark" aria-hidden="true">F</span> FORGEOS <span class="brand-divider">/</span><span data-i18n-en="SCHEDULE">时间规划</span></a>
     <div class="header-actions">
+      <a class="back-link" href="../knowledge/" data-i18n-en="Learning library ↗">学习知识库 ↗</a>
       <a class="back-link" href="template.html" data-i18n-en="Design preview ↗">设计样板 ↗</a>
       <a class="back-link" href="../#modules" data-i18n-en="← Workspace">← 工作间</a>
       <button class="utility-btn" id="languageToggle" type="button">CN</button>
@@ -37,7 +38,7 @@
         <h1 data-i18n-en="Make room for what matters.">为重要的事，安排好时间。</h1>
         <p class="intro-copy" data-i18n-en="Capture a task. Review a plan. Adapt as your day changes.">记录任务，确认计划，让日程跟上你的变化。</p>
       </div>
-      <div class="intro-side"><span class="prototype-badge" data-i18n-en="INTERACTIVE PROTOTYPE">交互原型</span><button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button></div>
+      <div class="intro-side"><button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button></div>
     </section>
     <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
       <span class="agent-glyph" aria-hidden="true">✦</span>
@@ -99,9 +100,17 @@
           <div id="proposalActions" class="proposal-actions" hidden><button id="confirmPlan" class="primary-btn" type="button" data-i18n-en="Confirm this plan">确认采用此计划</button><button id="discardPlan" class="secondary-btn" type="button" data-i18n-en="Discard proposal">放弃建议</button></div>
           <p class="field-help" id="lastConfirmed"></p>
         </section>
-        <section class="planner-panel">
-          <div class="panel-heading"><div><p class="eyebrow">TASK POOL</p><h2 data-i18n-en="Everything on your list">任务池</h2></div><span class="subtle" data-i18n-en="Edit · Complete · Replan">编辑 · 完成 · 重排</span></div>
-          <div id="taskList" class="task-list"></div>
+        <section class="planner-panel task-pool-panel" aria-labelledby="taskPoolTitle">
+          <details id="taskPool">
+            <summary class="task-pool-summary">
+              <span class="task-pool-heading"><span class="eyebrow">TASK POOL</span><span id="taskPoolTitle" class="task-pool-title" data-i18n-en="Task pool">任务池</span><span id="taskPoolCount" class="task-pool-count"></span></span>
+              <span class="task-pool-toggle"><span class="task-pool-expand" data-i18n-en="View tasks">展开任务</span><span class="task-pool-collapse" data-i18n-en="Collapse">收起</span><span class="task-pool-chevron" aria-hidden="true"></span></span>
+            </summary>
+            <div class="task-pool-body">
+              <div class="task-pool-toolbar"><span data-i18n-en="Edit · Complete · Replan">编辑 · 完成 · 重排</span><span data-i18n-en="Scroll inside to view more">在列表内滚动查看更多</span></div>
+              <div id="taskList" class="task-list" tabindex="0" role="region" aria-labelledby="taskPoolTitle"></div>
+            </div>
+          </details>
         </section>
         <section class="planner-panel">
           <details id="fixedDetails"><summary><span data-i18n-en="Fixed events">固定安排</span><span class="subtle" data-i18n-en="Protect meetings and breaks +">预留会议与休息时间 ＋</span></summary>
@@ -115,9 +124,9 @@
     <footer class="planner-footer"><span>FORGEOS / <span data-i18n-en="Schedule">动态时间规划</span></span><span data-i18n-en="Next: agent-assisted planning · knowledge links · project workflows">后续接入：智能体辅助规划 · 知识关联 · 项目工作流</span></footer>
   </main>
   <script src="../assets/js/i18n.js?v=20261008"></script>
-  <script src="../assets/js/ui.js?v=20261008"></script>
+  <script src="../assets/js/ui.js?v=20261011c"></script>
   <script src="../assets/js/planner-core.js?v=20261008"></script>
-  <script src="../assets/js/planner.js?v=20261008"></script>
-  <script src="../assets/js/agent-settings.js?v=20261010c"></script>
+  <script src="../assets/js/planner.js?v=20261011"></script>
+  <script src="../assets/js/agent-settings.js?v=20261011d"></script>
 </body>
 </html>

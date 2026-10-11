@@ -6,12 +6,13 @@ The upstream MIT license is included in `LICENSE`. SVG files are unmodified.
 
 | Agent | Asset |
 | --- | --- |
-| Codex | `codex.svg` |
+| Codex (ChatGPT mark) | `chatgpt.svg` (upstream `openai.svg`) |
 | Claude | `claude-color.svg` |
 | Gemini | `gemini-color.svg` |
 | DeepSeek V4 | `deepseek-color.svg` (DeepSeek brand mark) |
 | Kimi | `kimi-color.svg` |
 
 Source URL pattern: `https://unpkg.com/@lobehub/icons-static-svg@1.95.1/icons/<filename>`.
-The monochrome Codex asset switches between white and black through CSS for theme contrast.
+`chatgpt.svg` is the unmodified upstream `openai.svg`, saved under a descriptive local filename.
+The monochrome ChatGPT mark for Codex switches between white and black through CSS for theme contrast.
 Provider names appear beside every icon; images are decorative to avoid duplicate screen reader labels.

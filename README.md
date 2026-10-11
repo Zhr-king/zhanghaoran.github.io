@@ -5,6 +5,8 @@ ForgeOS project
 
 静态内容的英文译文放在 `index.html` 的 `data-i18n-en` 等属性中；动态提示、打字机和终端文案由 `assets/js/i18n.js` 管理。
 
+英文模式通过 `--text-scale` 将小字号放大 6%，中文字号和大标题保持原设置。特效引擎缓存浅色静态网格，静止时停止重复绘制；夜色星网保留全部粒子与连线，鼠标视差和卡片倾斜按需更新。运行 `node tests/fx.cjs` 检查粒子连线完整性、画布分辨率、休眠与唤醒、涟漪拖尾和主题切换。
+
 本机安装 Chrome 和 Node.js 22 或更新版本后，可运行 `node tests/language.cjs` 检查语言切换、窄屏布局、主题兼容、动画和存储降级。Chrome 安装在其他位置时，用 `CHROME_PATH` 指定可执行文件。
 
 内容默认可见，入场效果只在进入视口时播放；脚本加载失败后会自动退出启动遮罩。测试还覆盖锚点跳转、快速滚动、缺少 IntersectionObserver、禁用 JavaScript 和点击区域尺寸。
@@ -19,4 +21,6 @@ ForgeOS project
 
 智能体账号页位于 `/planner/agent.html`，工作台及样板页提供“选择默认智能体”和“登录智能体”两个入口。前端仅展示 Codex、Claude、Gemini、DeepSeek V4、Kimi；支持演示登录、从已登录账号中保存或切换默认智能体、取消默认及退出。状态保存在独立的 `forgeos:agent-accounts:v1` 本机存储项中。登录不会自动设置默认，退出默认账号会清除默认选择。当前为纯前端演示，无需密码或 API Key，未接入真实授权或智能体调用，Schedule 仍使用本地规则。旧服务配置不作为登录状态读取。
 
-独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页和时间规划页；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。
+学习知识库位于 `/knowledge/`，首页“学习知识库”和“知识库”卡片、规划页及样板页均有入口。支持示例科目与自建科目、阅读与回忆复习、学习记录、笔记关键词检索、Markdown/TXT 导入、文档说明和 Markdown 导出。数据保存在独立的 `forgeos:knowledge:v1` 浏览器存储中，不会上传文件。目前尚未连接 Obsidian 知识库或 AI，检索结果直接打开已有笔记；Obsidian 接入说明入口介绍后续流程。单份文档限制为 200 KB、50,000 字，库内最多 50 个科目和 200 份笔记。运行 `node tests/knowledge-browser.cjs` 检查交互、本地保存和响应式布局。
+
+独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页、时间规划页和学习知识库；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。

@@ -284,18 +284,27 @@
   if (FINE && !REDUCED) {
     const MAX = 7;
     document.querySelectorAll('[data-tilt]').forEach((card) => {
-      card.addEventListener('pointermove', (e) => {
+      let tiltFrame = 0, pointerX = 0, pointerY = 0;
+      function updateTilt() {
+        tiltFrame = 0;
         const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width;
-        const py = (e.clientY - r.top) / r.height;
+        const px = (pointerX - r.left) / r.width;
+        const py = (pointerY - r.top) / r.height;
         const ry = (px - 0.5) * 2 * MAX;
         const rx = -(py - 0.5) * 2 * MAX;
         card.style.transform =
           'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-4px)';
         card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
         card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+      }
+      card.addEventListener('pointermove', (e) => {
+        pointerX = e.clientX; pointerY = e.clientY;
+        if (!tiltFrame) tiltFrame = requestAnimationFrame(updateTilt);
+      }, { passive: true });
+      card.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(tiltFrame); tiltFrame = 0;
+        card.style.transform = '';
       });
-      card.addEventListener('pointerleave', () => { card.style.transform = ''; });
     });
   }
 
@@ -348,6 +357,7 @@
   let sectionFrame = 0;
   function updateActiveSection() {
     sectionFrame = 0;
+    if (!sections.length) return;
     let active = sections[0];
     const marker = Math.max((nav?.getBoundingClientRect().height || 64) + 24, window.innerHeight * .3);
     sections.forEach(section => {
@@ -362,7 +372,7 @@
     });
   }
   function scheduleSectionUpdate() {
-    if (!sectionFrame) sectionFrame = requestAnimationFrame(updateActiveSection);
+    if (sections.length && !sectionFrame) sectionFrame = requestAnimationFrame(updateActiveSection);
   }
   window.addEventListener('scroll', scheduleSectionUpdate, { passive: true });
   window.addEventListener('resize', scheduleSectionUpdate);

@@ -3,7 +3,7 @@
   'use strict';
   const KEY = 'forgeos:agent-accounts:v1';
   const providers = [
-    { id: 'codex', name: 'Codex', icon: 'codex.svg' },
+    { id: 'codex', name: 'Codex', icon: 'chatgpt.svg' },
     { id: 'claude', name: 'Claude', icon: 'claude-color.svg' },
     { id: 'gemini', name: 'Gemini', icon: 'gemini-color.svg' },
     { id: 'deepseek-v4', name: 'DeepSeek V4', icon: 'deepseek-color.svg' },

@@ -44,6 +44,13 @@
   const spot = null;   /* 鼠标大光晕已移除（原 #spotlight），保留空引用让下方分支自然跳过 */
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas ? canvas.getContext('2d') : null;
+  const parallaxTargets = Array.from(document.querySelectorAll('.hero-rings, .hero-content, .float-chip'));
+  let frameId = 0, last = 0, needsDraw = true, pointerAnimating = true;
+  let lastParX = '', lastParY = '';
+
+  function requestFrame() {
+    if (!REDUCED && !document.hidden && !frameId) frameId = requestAnimationFrame(frame);
+  }
 
   /* ----------------------------------------------------------
      一、鼠标状态
@@ -63,6 +70,9 @@
   window.addEventListener('mousemove', (e) => {
     mx = e.clientX;
     my = e.clientY;
+    pointerAnimating = true;
+    needsDraw = true;
+    requestFrame();
     if (!mouseOn) {
       mouseOn = true;
       if (useCursor) document.body.classList.add('cursor-on');
@@ -74,6 +84,8 @@
     mouseOn = false;
     if (useCursor) document.body.classList.remove('cursor-on');
     if (spot) spot.style.opacity = '0';
+    needsDraw = true;
+    requestFrame();
   });
 
   /* 悬停可交互元素时外环放大 */
@@ -95,6 +107,8 @@
   let parts = [];
   let hexes = [];
   const ripples = [];
+  let starCells = [], starColumns = 0;
+  let gridCanvas = null, gridDirty = true;
 
   function seed() {
     /* 分层均匀撒点：避免纯随机聚簇导致的“一侧密一侧疏” */
@@ -117,6 +131,8 @@
         });
       }
     }
+    starColumns = Math.ceil((W + 48) / LINK_D) + 1;
+    starCells = Array.from({ length: starColumns * (Math.ceil((H + 48) / LINK_D) + 1) }, () => []);
   }
 
   /* 六边形蜂窝网格（pointy-top），浅色主题的玻璃 HUD */
@@ -131,24 +147,27 @@
     const rows = Math.ceil(H / h) + 2;
     for (let r = -1; r < rows; r++) {
       for (let c = -1; c < cols; c++) {
-        hexes.push({
+        const hx = {
           x: c * w + ((r & 1) ? w / 2 : 0) + w / 2,
           y: r * h + HEX_SIZE,
           s: HEX_SIZE * 0.94
-        });
+        };
+        hx.path = new Path2D();
+        hexPath(hx.x, hx.y, hx.s, hx.path);
+        hexes.push(hx);
       }
     }
   }
 
-  function hexPath(cx, cy, s) {
+  function hexPath(cx, cy, s, target = ctx) {
     for (let i = 0; i < 6; i++) {
       const a = Math.PI * (60 * i - 90) / 180;
       const x = cx + s * Math.cos(a);
       const y = cy + s * Math.sin(a);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+      if (i === 0) target.moveTo(x, y);
+      else target.lineTo(x, y);
     }
-    ctx.closePath();
+    target.closePath();
   }
 
   function resize() {
@@ -163,7 +182,11 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     seed();
     seedHex();
+    gridDirty = true;
+    needsDraw = true;
+    pointerAnimating = true;
     if (REDUCED) drawFrame(1); // 静态降级：只画一帧
+    else requestFrame();
   }
 
   /* ----------------------------------------------------------
@@ -178,6 +201,8 @@
       x: x, y: y, r: 5, a: 0.55, spd: 3.4, dec: 0.972,
       lw: 1.5, ring2: true, c: 'r1'
     }, o || {}));
+    needsDraw = true;
+    requestFrame();
   }
 
   /* 流星拖尾：长按划动时记录的采样点 */
@@ -224,6 +249,7 @@
   const REPEL_D = 140;  // 鼠标排斥半径
 
   function drawStars(dt) {
+    const damp = Math.pow(0.995, dt);
     for (const p of parts) {
       if (!REDUCED) {
         p.x += p.vx * dt;
@@ -240,7 +266,6 @@
           }
         }
         /* 阻尼 + 限速，保持漂浮感 */
-        const damp = Math.pow(0.995, dt);
         p.vx *= damp;
         p.vy *= damp;
         const sp = Math.hypot(p.vx, p.vy);
@@ -254,21 +279,34 @@
       if (p.y > H + 24) p.y = -24;
     }
 
-    /* 粒子间连线 */
+    /* Only nearby cells can contain a link; keep every original particle and connection. */
+    for (const cell of starCells) cell.length = 0;
+    parts.forEach((p, index) => {
+      p.cellX = Math.floor((p.x + 24) / LINK_D);
+      p.cellY = Math.floor((p.y + 24) / LINK_D);
+      starCells[p.cellY * starColumns + p.cellX].push(index);
+    });
     ctx.lineWidth = 1;
     for (let i = 0; i < parts.length; i++) {
       const a = parts[i];
-      for (let j = i + 1; j < parts.length; j++) {
-        const b = parts[j];
-        const dx = a.x - b.x, dy = a.y - b.y;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < LINK_D * LINK_D) {
-          const alpha = (1 - Math.sqrt(d2) / LINK_D) * pal.linkA;
-          ctx.strokeStyle = 'rgba(' + pal.link + ',' + alpha.toFixed(3) + ')';
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.stroke();
+      for (let cy = Math.max(0, a.cellY - 1); cy <= a.cellY + 1; cy++) {
+        for (let cx = Math.max(0, a.cellX - 1); cx <= Math.min(starColumns - 1, a.cellX + 1); cx++) {
+          const cell = starCells[cy * starColumns + cx];
+          if (!cell) continue;
+          for (const j of cell) {
+            if (j <= i) continue;
+            const b = parts[j];
+            const dx = a.x - b.x, dy = a.y - b.y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < LINK_D * LINK_D) {
+              const alpha = (1 - Math.sqrt(d2) / LINK_D) * pal.linkA;
+              ctx.strokeStyle = 'rgba(' + pal.link + ',' + alpha.toFixed(3) + ')';
+              ctx.beginPath();
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+              ctx.stroke();
+            }
+          }
         }
       }
     }
@@ -277,8 +315,9 @@
     if (mouseOn && !REDUCED) {
       for (const p of parts) {
         const dx = p.x - mx, dy = p.y - my;
-        const d = Math.hypot(dx, dy);
-        if (d < MOUSE_D) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 < MOUSE_D * MOUSE_D) {
+          const d = Math.sqrt(d2);
           const alpha = (1 - d / MOUSE_D) * pal.mlinkA;
           ctx.strokeStyle = 'rgba(' + pal.mlink + ',' + alpha.toFixed(3) + ')';
           ctx.beginPath();
@@ -302,27 +341,36 @@
      五、绘制：蓝白玻璃六边形 HUD 网格
      ---------------------------------------------------------- */
   function drawGlassGrid() {
-    /* 基础网格：全部六边形合成一条路径，一次描边 */
+    /* Rasterize the unchanged base grid once per viewport at the original DPR. */
+    if (gridDirty) {
+      gridCanvas ||= document.createElement('canvas');
+      gridCanvas.width = canvas.width;
+      gridCanvas.height = canvas.height;
+      const base = gridCanvas.getContext('2d');
+      base.setTransform(DPR, 0, 0, DPR, 0, 0);
+      base.lineWidth = 1;
+      base.strokeStyle = 'rgba(37,99,235,0.09)';
+      base.beginPath();
+      for (const hx of hexes) hexPath(hx.x, hx.y, hx.s, base);
+      base.stroke();
+      gridDirty = false;
+    }
+    ctx.drawImage(gridCanvas, 0, 0, gridCanvas.width / DPR, gridCanvas.height / DPR);
     ctx.lineWidth = 1;
-    ctx.strokeStyle = 'rgba(37,99,235,0.09)';
-    ctx.beginPath();
-    for (const hx of hexes) hexPath(hx.x, hx.y, hx.s);
-    ctx.stroke();
 
     if (!mouseOn || REDUCED) return;
 
     /* 鼠标邻域：玻璃面板被逐格点亮 */
     for (const hx of hexes) {
       const dx = hx.x - mx, dy = hx.y - my;
-      const d = Math.hypot(dx, dy);
-      if (d >= HEX_R) continue;
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= HEX_R * HEX_R) continue;
+      const d = Math.sqrt(d2);
       const k = 1 - d / HEX_R;
-      ctx.beginPath();
-      hexPath(hx.x, hx.y, hx.s);
       ctx.fillStyle = 'rgba(147,197,253,' + (0.16 * k).toFixed(3) + ')';
-      ctx.fill();
+      ctx.fill(hx.path);
       ctx.strokeStyle = 'rgba(34,211,238,' + (0.5 * k).toFixed(3) + ')';
-      ctx.stroke();
+      ctx.stroke(hx.path);
     }
   }
 
@@ -428,36 +476,50 @@
   /* ----------------------------------------------------------
      八、主循环：光标缓动 + 聚光 + 视差
      ---------------------------------------------------------- */
-  let last = performance.now();
-
   function frame(now) {
-    const dt = Math.min(2.6, (now - last) / 16.667);
+    frameId = 0;
+    if (document.hidden) { last = 0; return; }
+    const dt = last ? Math.min(2.6, (now - last) / 16.667) : 1;
     last = now;
-    syncTheme();
 
-    /* 缓动插值 */
-    dotX = lerp(dotX, mx, 0.6);
-    dotY = lerp(dotY, my, 0.6);
-    ringX = lerp(ringX, mx, 0.16);
-    ringY = lerp(ringY, my, 0.16);
-    spotX = lerp(spotX, mx, 0.1);
-    spotY = lerp(spotY, my, 0.1);
-    parX = lerp(parX, (mx / window.innerWidth - 0.5) * 2, 0.06);
-    parY = lerp(parY, (my / window.innerHeight - 0.5) * 2, 0.06);
+    if (pointerAnimating) {
+      /* 缓动插值：settled pointers do not need further DOM updates. */
+      dotX = lerp(dotX, mx, 0.6);
+      dotY = lerp(dotY, my, 0.6);
+      ringX = lerp(ringX, mx, 0.16);
+      ringY = lerp(ringY, my, 0.16);
+      spotX = lerp(spotX, mx, 0.1);
+      spotY = lerp(spotY, my, 0.1);
+      parX = lerp(parX, (mx / window.innerWidth - 0.5) * 2, 0.06);
+      parY = lerp(parY, (my / window.innerHeight - 0.5) * 2, 0.06);
 
-    if (useCursor) {
-      dot.style.transform = 'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
-      ring.style.transform = 'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
+      if (useCursor) {
+        dot.style.transform = 'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
+        ring.style.transform = 'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
+      }
+      if (spot) spot.style.transform = 'translate3d(' + spotX + 'px,' + spotY + 'px,0) translate(-50%,-50%)';
+
+      /* Scope inherited values to the elements that use them, not the whole page. */
+      const px = parX.toFixed(4), py = parY.toFixed(4);
+      if (px !== lastParX || py !== lastParY) {
+        parallaxTargets.forEach(el => {
+          if (px !== lastParX) el.style.setProperty('--px', px);
+          if (py !== lastParY) el.style.setProperty('--py', py);
+        });
+        lastParX = px; lastParY = py;
+      }
+      pointerAnimating = Math.abs(dotX - mx) + Math.abs(dotY - my) > .001 ||
+        Math.abs(ringX - mx) + Math.abs(ringY - my) > .001 ||
+        Math.abs(parX - (mx / window.innerWidth - .5) * 2) + Math.abs(parY - (my / window.innerHeight - .5) * 2) > .00001;
     }
-    if (spot) spot.style.transform = 'translate3d(' + spotX + 'px,' + spotY + 'px,0) translate(-50%,-50%)';
 
-    /* 视差变量供 CSS 使用 */
-    root.style.setProperty('--px', parX.toFixed(4));
-    root.style.setProperty('--py', parY.toFixed(4));
+    if (ctx && (needsDraw || !light || hold || ripples.length || trail.length)) {
+      needsDraw = false;
+      drawFrame(dt);
+    }
 
-    if (ctx) drawFrame(dt);
-
-    requestAnimationFrame(frame);
+    if (pointerAnimating || (ctx && (!light || hold || ripples.length || trail.length))) requestFrame();
+    else last = 0;
   }
 
   /* ----------------------------------------------------------
@@ -471,16 +533,27 @@
 
   resize();
 
-  // 静态背景也需要响应主题切换。
-  if (REDUCED) {
-    new MutationObserver(() => {
-      syncTheme();
-      if (ctx) drawFrame(1);
-    }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-  }
+  // Theme changes invalidate the cached output, including a sleeping light-theme canvas.
+  new MutationObserver(() => {
+    syncTheme();
+    needsDraw = true;
+    if (REDUCED && ctx) drawFrame(1);
+    else requestFrame();
+  }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelAnimationFrame(frameId);
+      frameId = 0; last = 0;
+      endHold();
+    } else {
+      needsDraw = true;
+      requestFrame();
+    }
+  });
 
   if (!REDUCED) {
-    requestAnimationFrame(frame);
+    requestFrame();
   } else if (spot) {
     spot.style.display = 'none';
   }

@@ -105,7 +105,10 @@
     if (proposal.issues.length && proposal.slots.length) content.append(node('p', tr('确认后只安排可排入的任务；冲突任务保留在任务池，其原日程将被移除。', 'Confirmation schedules only the tasks shown above. Conflicting tasks stay in the task pool and lose any previous time slots.'), 'field-help'));
   }
   function renderTasks() {
-    const list = $('taskList'); list.replaceChildren();
+    const list = $('taskList'), scrollTop = list.scrollTop;
+    const remaining = state.tasks.filter(task => !task.done).length;
+    $('taskPoolCount').textContent = tr(`${remaining} 项待办 · ${state.tasks.length - remaining} 项已完成`, `${remaining} open · ${state.tasks.length - remaining} completed`);
+    list.replaceChildren();
     if (!state.tasks.length) empty(list, tr('从一个小任务开始', 'Start with one small task'), tr('在左侧录入任务，或试用页面上方的示例。', 'Capture a task or try the example tasks above.'));
     state.tasks.forEach(task => {
       const row = node('div', undefined, 'task-row' + (task.done ? ' done' : ''));
@@ -139,6 +142,7 @@
       }));
       body.append(actions); row.append(complete, body); list.append(row);
     });
+    list.scrollTop = scrollTop;
   }
   function renderEvents() {
     $('eventList').replaceChildren();
@@ -225,8 +229,16 @@
   $('prevDay').addEventListener('click', () => { selectedDay = Math.max(0, selectedDay - 1); renderSchedule(); });
   $('nextDay').addEventListener('click', () => { selectedDay = Math.min(6, selectedDay + 1); renderSchedule(); });
   $('todayButton').addEventListener('click', () => { selectedDay = 0; renderSchedule(); });
+  function revealTaskPoolFromLink() {
+    if (location.hash === '#taskList' || location.hash === '#taskPool') {
+      $('taskPool').open = true;
+      $('taskPool').scrollIntoView();
+    }
+  }
+  window.addEventListener('hashchange', revealTaskPoolFromLink);
   document.addEventListener('forgeos:languagechange', () => { $('feedback').textContent = ''; render(); });
   $('workStart').value = state.preferences.start; $('workEnd').value = state.preferences.end; $('focusTime').value = state.preferences.focus;
   $('eventDate').value = core.dateKey(new Date()); resetEditor(); render();
+  revealTaskPoolFromLink();
   if (loadFailed) notify('无法读取本地规划数据。当前使用空白工作台，保存可能不可用。', 'Local planning data could not be read. Starting with an empty workspace; saving may be unavailable.', true);
 })();
