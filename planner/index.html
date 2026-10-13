@@ -15,7 +15,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://forgeos.work/planner/">
   <link rel="stylesheet" href="../assets/css/style.css?v=20261013b">
-  <link rel="stylesheet" href="../assets/css/planner.css?v=20261013a">
+  <link rel="stylesheet" href="../assets/css/planner.css?v=20261013b">
   <link rel="stylesheet" href="../assets/css/agent.css?v=20261011c">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
@@ -27,8 +27,6 @@
     <a class="planner-brand" href="../"><span class="brand-mark" aria-hidden="true">F</span> FORGEOS <span class="brand-divider">/</span><span data-i18n-en="SCHEDULE">时间规划</span></a>
     </div>
     <div class="header-actions">
-      <a class="back-link" href="../knowledge/" data-i18n-en="Learning library ↗">学习知识库 ↗</a>
-      <a class="back-link" href="template.html" data-i18n-en="Design preview ↗">设计样板 ↗</a>
       <a class="back-link" href="../#modules" data-i18n-en="← Workspace">← 工作间</a>
       <button class="utility-btn" id="languageToggle" type="button">CN</button>
       <button class="utility-btn" id="themeToggle" type="button" aria-label="切换主题"><span id="themeLabel">夜色</span></button>
@@ -41,7 +39,10 @@
         <h1 data-i18n-en="Make room for what matters.">为重要的事，安排好时间。</h1>
         <p class="intro-copy" data-i18n-en="Capture a task. Review a plan. Adapt as your day changes.">记录任务，确认计划，让日程跟上你的变化。</p>
       </div>
-      <div class="intro-side"><button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button></div>
+      <div class="intro-side">
+        <button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button>
+        <a class="back-link preview-link" href="template.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11"/></svg><span data-i18n-en="Design preview ↗">设计样板 ↗</span></a>
+      </div>
     </section>
     <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
       <span class="agent-glyph" aria-hidden="true">✦</span>

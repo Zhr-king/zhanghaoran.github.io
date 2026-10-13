@@ -583,6 +583,8 @@ body.ready .hero h1 .ltr { animation: ltrIn .7s cubic-bezier(.18, .8, .3, 1.05) 
 }
 
 .hero-actions { display: flex; gap: 16px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+.hero-guide-action { position: relative; display: inline-flex; }
+.hero-guide-status { position: absolute; top: -9px; right: 10px; padding: 2px 7px; border: 1px solid var(--unavailable-border); border-radius: 5px; background: var(--unavailable-raised); color: var(--unavailable-text); font-size: calc(10px * var(--text-scale)); line-height: 1.4; white-space: nowrap; pointer-events: none; }
 
 .btn {
   min-height: 44px;
@@ -1301,6 +1303,20 @@ html.theme-fading body * {
     border-color 1.5s ease-in-out, box-shadow 1.5s ease-in-out,
     fill 1.5s ease-in-out, stroke 1.5s ease-in-out !important;
 }
+
+/* Unavailable features stay unlit, including on hover. */
+.is-unavailable { --unavailable-surface: #0b1320; --unavailable-raised: #131d2a; --unavailable-border: #2c394b; --unavailable-text: #a0adbf; --unavailable-heading: #b5c0d0; }
+html[data-theme="light"] .is-unavailable { --unavailable-surface: #e9edf3; --unavailable-raised: #e0e6ee; --unavailable-border: #bdc7d4; --unavailable-text: #626f82; --unavailable-heading: #566478; }
+.modules-grid .card.is-unavailable, .modules-grid .card.is-unavailable:hover { background: var(--unavailable-surface); border-color: var(--unavailable-border); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; will-change: auto; transform-style: flat; }
+.modules-grid .card.is-unavailable::before, .modules-grid .card.is-unavailable .glare { display: none; }
+.modules-grid .is-unavailable .icon-box, .modules-grid .is-unavailable:hover .icon-box { color: var(--unavailable-text); background: var(--unavailable-raised); border-color: var(--unavailable-border); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.modules-grid .is-unavailable .mod-title { color: var(--unavailable-heading); }
+.modules-grid .is-unavailable :is(.mod-id, .mod-en, .mod-desc) { color: var(--unavailable-text); }
+.modules-grid .is-unavailable .card-bottom { border-color: var(--unavailable-border); }
+.module-unavailable { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 7px 14px; color: var(--unavailable-text); background: var(--unavailable-raised); border: 1px dashed var(--unavailable-border); border-radius: 8px; font-size: calc(13px * var(--text-scale)); }
+.module-unavailable svg { width: 16px; height: 16px; flex-shrink: 0; }
+html .btn.is-unavailable, html .btn.is-unavailable:hover { color: var(--unavailable-text); background: var(--unavailable-surface); border-color: var(--unavailable-border); box-shadow: none; text-shadow: none; transform: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html .btn.is-unavailable::after { display: none; }
 
 /* ---------- 15. 可访问性 / 降级 ---------- */
 @media (prefers-reduced-motion: reduce) {

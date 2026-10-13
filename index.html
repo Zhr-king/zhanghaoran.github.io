@@ -27,7 +27,7 @@
   </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 3 57 17.5v29L32 61 7 46.5v-29z' fill='%230a1a3d' stroke='%233b82f6' stroke-width='3'/%3E%3Cpath d='M35 12 20 36h9l-3 16 15-24h-9z' fill='%237dd3fc'/%3E%3C/svg%3E">
   <!-- 更新站点后请把下面 CSS/JS 的 ?v= 改成新日期，访客浏览器会自动拉取新文件（防缓存错乱） -->
-  <link rel="stylesheet" href="assets/css/style.css?v=20261013b">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261013d">
   <script>
     (function () {
       var el = document.documentElement;
@@ -162,12 +162,15 @@
 
         <div class="hero-actions hero-in" style="--d:.58s">
           <a class="btn btn-primary" href="#modules">
-            <span data-i18n-en="View modules">查看模块</span>
+            <span data-i18n-en="Get started">开始使用</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
           </a>
-          <button class="btn btn-ghost" type="button" data-toast="文档中心正在锻造中，很快与你见面 ⚙" data-toast-en="Documentation coming soon ⚙">
-            <span data-i18n-en="View docs">查看文档</span>
-          </button>
+          <div class="hero-guide-action is-unavailable">
+            <button class="btn btn-ghost is-unavailable" type="button" aria-describedby="guideStatus" data-toast="文档中心正在锻造中，很快与你见面 ⚙" data-toast-en="Documentation coming soon ⚙">
+              <span data-i18n-en="User guide">使用指南</span>
+            </button>
+            <span class="hero-guide-status" id="guideStatus" data-i18n-en="Coming soon">筹备中</span>
+          </div>
         </div>
 
         <div class="hero-stats hero-in" style="--d:.68s">
@@ -198,7 +201,7 @@
             <span class="sec-en">ALL-IN-ONE WORKSPACE</span>
           </div>
           <p class="hero-sub" style="margin-top:16px;max-width:640px">
-            <span data-i18n-en="Six tools. Pick what you need.">六个模块，按需使用。</span>
+            <span data-i18n-en="Available tools are lit up. More are on the way.">可用模块已点亮，其余功能陆续开放。</span>
           </p>
           <div class="sec-line"></div>
         </div>
@@ -238,8 +241,7 @@
             </div>
           </article>
 
-          <article class="card reveal ac-cyan" data-tilt data-delay="140">
-            <span class="glare" aria-hidden="true"></span>
+          <article class="card is-unavailable reveal ac-cyan" data-delay="140">
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/><path d="m13.5 4-3 16"/></svg>
@@ -251,7 +253,7 @@
             <p class="mod-desc"><span data-i18n-en="From first snippet to finished project.">项目脚手架、代码片段库与常用工具链，灵感来了立刻开工。</span></p>
             <div class="card-bottom">
 
-              <button class="btn-mini" type="button" data-toast="「代码工坊」模块正在锻造中，敬请期待 ⚒" data-toast-en="Code Forge: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
+              <span class="module-unavailable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></svg><span data-i18n-en="Coming soon">尚未开放</span></span>
             </div>
           </article>
 
@@ -272,8 +274,7 @@
             </div>
           </article>
 
-          <article class="card reveal ac-indigo" data-tilt data-delay="280">
-            <span class="glare" aria-hidden="true"></span>
+          <article class="card is-unavailable reveal ac-indigo" data-delay="280">
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
@@ -285,12 +286,11 @@
             <p class="mod-desc"><span data-i18n-en="Capture ideas before they fade.">灵感速记、思维导图与碎片归档，不错过任何一簇火花。</span></p>
             <div class="card-bottom">
 
-              <button class="btn-mini" type="button" data-toast="「灵感核心」模块正在锻造中，敬请期待 ⚒" data-toast-en="Idea Core: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
+              <span class="module-unavailable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></svg><span data-i18n-en="Coming soon">尚未开放</span></span>
             </div>
           </article>
 
-          <article class="card reveal ac-sky" data-tilt data-delay="350">
-            <span class="glare" aria-hidden="true"></span>
+          <article class="card is-unavailable reveal ac-sky" data-delay="350">
             <div class="card-top">
               <div class="icon-box" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
@@ -302,7 +302,7 @@
             <p class="mod-desc"><span data-i18n-en="Your progress, at a glance.">学习数据统计、周报生成与日历集成，一屏总览全部状态。</span></p>
             <div class="card-bottom">
 
-              <button class="btn-mini" type="button" data-toast="「系统面板」模块正在锻造中，敬请期待 ⚒" data-toast-en="Dashboard: coming soon ⚒"><span data-i18n-en="Launch →">启动 →</span></button>
+              <span class="module-unavailable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></svg><span data-i18n-en="Coming soon">尚未开放</span></span>
             </div>
           </article>
         </div>
@@ -327,8 +327,8 @@
             <li><span data-i18n-en="See your progress">数据留痕：每天的锻造都会沉淀成进度</span></li>
           </ul>
           <div class="console-actions">
-            <button class="btn btn-primary" type="button" data-toast="forge CLI 正在锻造中，敬请期待 ⚙" data-toast-en="forge CLI coming soon ⚙">
-              <span data-i18n-en="Get forge CLI">获取 forge CLI</span>
+            <button class="btn btn-primary is-unavailable" type="button" data-toast="forge CLI 正在锻造中，敬请期待 ⚙" data-toast-en="forge CLI coming soon ⚙">
+              <span data-i18n-en="CLI coming soon">CLI 筹备中</span>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/></svg>
             </button>
           </div>
