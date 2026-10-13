@@ -63,6 +63,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       throw new Error('Planner did not become ready');
     };
     await send('Page.navigate', { url: base + '/planner/' }); await ready();
+    assert.equal(await evaluate('document.getElementById("moduleGuide")?.open'), true);
+    await evaluate('document.querySelector("[data-guide-action=skip]").click()');
     const click = id => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
     const saved = () => evaluate('JSON.parse(localStorage.getItem("forgeos:planner:v1"))');
     await click('loadDemo'); assert.equal((await saved()).tasks.length, 3);
