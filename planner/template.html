@@ -7,8 +7,8 @@
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#050a18">
   <title data-i18n-en="Schedule · Design Preview · ForgeOS">时间规划 · 页面样板 · ForgeOS</title>
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261011c">
-  <link rel="stylesheet" href="../assets/css/planner-template.css?v=20261011c">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261013b">
+  <link rel="stylesheet" href="../assets/css/planner-template.css?v=20261013a">
   <link rel="stylesheet" href="../assets/css/agent.css?v=20261011c">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
@@ -27,8 +27,8 @@
   </svg>
   <a class="template-skip" href="#templateMain" data-i18n-en="Skip to workspace">跳转到工作台</a>
   <aside class="template-sidebar">
-    <a class="template-logo" href="../" aria-label="ForgeOS 首页" data-i18n-label-en="ForgeOS home">
-      <svg viewBox="0 0 40 44" fill="none" aria-hidden="true"><path d="M20 2 37 12v20L20 42 3 32V12Z" stroke="currentColor"/><path d="m23 10-12 16h9l-3 9 12-17h-9z" fill="currentColor"/></svg>
+    <a class="template-logo site-home-brand" href="../" aria-label="返回主界面" data-i18n-label-en="Home" title="Home">
+      <svg class="site-home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg>
       <span>FORGE<span class="logo-accent">OS</span><small>PERSONAL WORKSPACE</small></span>
     </a>
     <div class="sidebar-caption" data-i18n-en="WORKSPACE">工作空间</div>
@@ -49,7 +49,7 @@
   </aside>
   <div class="template-content">
     <header class="template-topbar">
-      <div class="template-breadcrumb"><span data-i18n-en="Workspace">工作空间</span><span>/</span><strong data-i18n-en="Schedule">动态时间规划</strong></div>
+      <div class="site-heading"><a class="site-home-link template-header-home" href="../" aria-label="返回主界面" data-i18n-label-en="Home" title="Home"><svg class="site-home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg></a><div class="template-breadcrumb"><span data-i18n-en="Workspace">工作空间</span><span>/</span><strong data-i18n-en="Schedule">动态时间规划</strong></div></div>
       <div class="template-top-actions"><a class="agent-top-link" href="agent.html#default"><svg class="template-icon"><use href="#icon-spark"/></svg><span data-i18n-en="Agent accounts">智能体账号</span></a><button class="template-icon-button" id="languageToggle" type="button">CN</button><button class="template-theme-button" id="themeToggle" type="button" aria-label="切换主题"><span class="theme-orbit" aria-hidden="true"></span><span id="themeLabel">夜色</span></button></div>
     </header>
     <main class="template-main" id="templateMain">

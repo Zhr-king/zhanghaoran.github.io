@@ -1,6 +1,6 @@
 .planner-page { background: radial-gradient(ellipse at 80% 0, rgba(59, 130, 246, .12), transparent 45%), var(--bg-0); }
 .planner-page button, .planner-page input, .planner-page select, .planner-page textarea { font-family: var(--font-sans); }
-.planner-header { max-width: 1480px; margin: auto; min-height: 84px; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
+.planner-header { position: sticky; top: 0; z-index: 80; background: var(--bg-0); max-width: 1480px; margin: auto; min-height: 84px; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
 .planner-brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .12em; font-size: calc(14px * var(--text-scale)); }
 .planner-brand > span:last-child { color: var(--text-dim); font-size: calc(12px * var(--text-scale)); }
 .brand-mark { display: grid; place-items: center; width: 32px; height: 36px; color: var(--sky); border: 1px solid var(--line-strong); border-radius: 5px; background: rgba(59, 130, 246, .1); }

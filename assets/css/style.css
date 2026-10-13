@@ -301,6 +301,21 @@ html.no-boot #boot { display: none; }
 }
 .brand-text em { font-style: normal; color: var(--sky); }
 
+/* Home stays available in each workspace header, including compact layouts. */
+.site-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.nav-inner > .site-heading { flex-shrink: 0; }
+.site-home-link { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; color: var(--sky); border: 1px solid var(--line); border-radius: 10px; background: var(--chip-bg); transition: color .2s, background .2s, border-color .2s; }
+.site-home-link:hover, .site-home-link:focus-visible { color: var(--ice); border-color: var(--sky); background: var(--bg-2); }
+.site-home-icon { width: 22px; height: 22px; flex-shrink: 0; }
+.site-home-brand { min-height: 44px; }
+.site-home-brand .site-home-icon { transition: color .2s; }
+.site-home-brand:is(:hover, :focus-visible) .site-home-icon { color: var(--ice); }
+@media (max-width: 480px) {
+  .site-heading { gap: 8px; }
+  #navbar .language-toggle { min-width: 44px; }
+  .site-heading .brand > svg, .site-heading .planner-brand .brand-mark { display: none; }
+}
+
 .nav-links { display: flex; gap: 20px; margin-left: auto; }
 .nav-link {
   display: inline-flex; align-items: center; justify-content: center;
@@ -385,6 +400,16 @@ html[data-theme="light"] .theme-toggle .tt-moon { display: none; }
 html[data-theme="light"] .theme-toggle .tt-sun { display: block; }
 .language-toggle { min-width: 116px; justify-content: center; letter-spacing: 0; }
 .language-toggle:focus-visible { outline: 2px solid var(--ice); outline-offset: -4px; }
+
+/* Cool language control and warm theme control remain distinct in both themes. */
+#languageToggle { --control-bg: #103149; --control-hover: #164660; --control-border: #397b9d; --control-ink: #a1e1ff; }
+#themeToggle { --control-bg: #352a19; --control-hover: #4b3920; --control-border: #96733d; --control-ink: #f2d091; }
+html[data-theme="light"] #languageToggle { --control-bg: #e1f1ff; --control-hover: #cbe7ff; --control-border: #8dbce1; --control-ink: #175a91; }
+html[data-theme="light"] #themeToggle { --control-bg: #fff2d9; --control-hover: #ffe5b3; --control-border: #d4af6c; --control-ink: #875416; }
+:is(#languageToggle, #themeToggle) { color: var(--control-ink); background: var(--control-bg); border: 1px solid var(--control-border); box-shadow: inset 0 1px 0 #ffffff0a; }
+:is(#languageToggle, #themeToggle):is(:hover, :focus-visible) { color: var(--control-ink); background: var(--control-hover); border-color: var(--control-ink); box-shadow: inset 0 1px 0 #ffffff14; }
+:is(#languageToggle, #themeToggle):focus-visible { outline: 2px solid var(--control-ink); outline-offset: 3px; }
+.knowledge-page .kb-header-actions { gap: 10px; }
 
 /* ---------- 7. 英雄区 Hero ---------- */
 .hero {

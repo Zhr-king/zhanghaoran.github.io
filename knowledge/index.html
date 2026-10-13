@@ -14,8 +14,8 @@
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://forgeos.work/assets/images/social-card.png">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="stylesheet" href="../assets/css/style.css?v=20261011c">
-  <link rel="stylesheet" href="../assets/css/knowledge.css?v=20261011b">
+  <link rel="stylesheet" href="../assets/css/style.css?v=20261013b">
+  <link rel="stylesheet" href="../assets/css/knowledge.css?v=20261013a">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
 <body class="knowledge-page">
@@ -41,7 +41,7 @@
   <a class="kb-skip" href="#chatInput" data-i18n-en="Skip to message input">跳转到输入框</a>
   <button id="sidebarBackdrop" class="kb-sidebar-backdrop" type="button" aria-label="关闭历史记录" data-i18n-label-en="Close history" hidden></button>
   <aside id="chatSidebar" class="kb-sidebar" aria-label="会话历史" data-i18n-label-en="Conversation history">
-    <div class="kb-sidebar-brand"><a href="../" class="kb-logo">F<span>FORGE<span class="kb-logo-accent">OS</span></span></a><button id="sidebarClose" class="kb-icon-button" type="button" aria-label="收起侧栏" data-i18n-label-en="Collapse sidebar"><svg class="template-icon" aria-hidden="true"><use href="#kb-panel"/></svg></button></div>
+    <div class="kb-sidebar-brand"><a href="../" class="kb-logo site-home-brand" aria-label="返回主界面" data-i18n-label-en="Home" title="Home"><svg class="site-home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg><span>FORGE<span class="kb-logo-accent">OS</span></span></a><button id="sidebarClose" class="kb-icon-button" type="button" aria-label="收起侧栏" data-i18n-label-en="Collapse sidebar"><svg class="template-icon" aria-hidden="true"><use href="#kb-panel"/></svg></button></div>
     <button id="newChat" class="kb-new-chat" type="button"><svg class="template-icon" aria-hidden="true"><use href="#kb-plus"/></svg><span data-i18n-en="New conversation">新对话</span><span class="kb-new-mark">↗</span></button>
     <nav class="kb-library-nav" aria-label="知识库工具" data-i18n-label-en="Library tools">
       <button id="openSubjects" type="button"><svg class="template-icon" aria-hidden="true"><use href="#kb-book"/></svg><span data-i18n-en="My subjects">我的科目</span><span id="sidebarSubjectCount" class="kb-nav-count">0</span></button>
@@ -54,7 +54,7 @@
   </aside>
   <div id="chatShell" class="kb-chat-shell">
     <header class="kb-topbar">
-      <div class="kb-chat-heading"><button id="sidebarToggle" class="kb-icon-button" type="button" aria-controls="chatSidebar" aria-expanded="true" aria-label="切换历史侧栏" data-i18n-label-en="Toggle history sidebar"><svg class="template-icon" aria-hidden="true"><use href="#kb-panel"/></svg></button><div><strong data-i18n-en="Learning library">学习知识库</strong><span id="chatTitle" data-default-title></span></div></div>
+      <div class="kb-chat-heading"><a class="site-home-link kb-header-home" href="../" aria-label="返回主界面" data-i18n-label-en="Home" title="Home"><svg class="site-home-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h5v-6h4v6h5V9"/></svg></a><button id="sidebarToggle" class="kb-icon-button" type="button" aria-controls="chatSidebar" aria-expanded="true" aria-label="切换历史侧栏" data-i18n-label-en="Toggle history sidebar"><svg class="template-icon" aria-hidden="true"><use href="#kb-panel"/></svg></button><div><strong data-i18n-en="Learning library">学习知识库</strong><span id="chatTitle" data-default-title></span></div></div>
       <div class="kb-header-actions"><button id="languageToggle" class="kb-icon-button" type="button">CN</button><button id="themeToggle" class="kb-theme-button" type="button"><span class="kb-theme-orbit" aria-hidden="true"></span><span id="themeLabel">夜色</span></button></div>
     </header>
     <main id="knowledgeMain" class="kb-chat-main">

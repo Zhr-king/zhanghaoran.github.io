@@ -46,6 +46,9 @@
 .sidebar-profile small { color: var(--template-muted); font-size: calc(10px * var(--text-scale)); display: flex; gap: 5px; align-items: center; margin-top: 3px; }
 .sidebar-profile i { width: 4px; height: 4px; background: var(--template-cyan); border-radius: 50%; }
 .template-content { margin-left: 220px; min-width: 0; }
+.template-page .template-topbar { position: sticky; top: 0; z-index: 25; background: var(--template-surface); }
+.template-topbar .template-header-home { display: none; }
+@media (max-width: 700px) { .template-topbar .template-header-home { display: inline-flex; } }
 .template-topbar { height: 72px; display: flex; justify-content: space-between; align-items: center; padding: 0 36px; border-bottom: 1px solid var(--template-border); }
 .template-breadcrumb { display: flex; gap: 14px; align-items: center; color: var(--template-muted); font-size: calc(12px * var(--text-scale)); }
 .template-breadcrumb > span:nth-child(2) { color: #405571; }
@@ -149,7 +152,7 @@
 .template-footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--template-border); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; font-size: calc(9px * var(--text-scale)); color: #657e9e; letter-spacing: .02em; }.template-footer > span:first-child { display: flex; align-items: center; gap: 8px; }.footer-square { width: 4px; height: 4px; background: #7aa9d7; transform: rotate(45deg); }.footer-divider { color: #405671; margin: 0 3px; }
 .template-announcement { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }.template-noscript { padding: 20px; margin-left: 220px; color: var(--template-blue); }
 html[data-theme="light"] .template-page { --template-surface: #f8fbff; --template-surface-raised: #eaf2ff; --template-border: #396c9e29; --template-blue: #2864b4; --template-cyan: #13777f; --template-violet: #7563b2; --template-muted: #5d7290; color: #254566; background: #eef4fc; }
-html[data-theme="light"] .template-sidebar { background: #e6eef8; }.template-page .template-topbar { background: transparent; }
+html[data-theme="light"] .template-sidebar { background: #e6eef8; }
 html[data-theme="light"] :is(.template-breadcrumb strong, .template-welcome h1, .template-stat strong, .sample-event-title, .assistant-message p, .sample-task-title, .template-focus-note p) { color: #23436a; }
 html[data-theme="light"] :is(.template-nav > a, .nav-upcoming, .sidebar-note p, .welcome-description, .template-stat-label, .sample-event-time, .assistant-message > span, .template-focus-note small) { color: #58708f; }
 html[data-theme="light"] .template-nav > .is-active { color: #235795; background: #b7d5fd50; }.template-page .template-theme-button { width: auto; }
