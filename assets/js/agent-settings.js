@@ -157,6 +157,7 @@
   }
   function render() {
     const current = providerFor(state.defaultProvider);
+    document.querySelectorAll('[data-agent-default-mark]').forEach(node => paintMark(node, current));
     document.querySelectorAll('[data-agent-state]').forEach(node => {
       node.dataset.state = current ? 'demo' : 'disconnected';
       node.textContent = current ? tr('演示默认：', 'Demo default: ') + current.name : tr('尚未选择默认智能体', 'No default agent selected');

@@ -11,8 +11,8 @@ function setup({ light = false, reduced = false, width = 1440, height = 900, dpr
   const makeElement = () => {
     const listeners = new Map();
     return {
-      style: { setProperty(name, value) { this[name] = value; } },
-      classList: { add() {}, remove() {} },
+      style: { setProperty(name, value) { this[name] = value; }, getPropertyValue(name) { return this[name] || ''; } },
+      classList: { add() {}, remove() {}, contains() { return false; } },
       addEventListener(name, handler) { if (!listeners.has(name)) listeners.set(name, []); listeners.get(name).push(handler); },
       emit(name, event = {}) { for (const handler of listeners.get(name) || []) handler(event); }
     };
@@ -32,6 +32,8 @@ function setup({ light = false, reduced = false, width = 1440, height = 900, dpr
   root.getAttribute = () => light ? 'light' : null;
   const canvas = { style: {}, getContext: () => ctx };
   const parallax = [makeElement(), makeElement()];
+  parallax[0].classList.contains = name => name === 'hero-rings';
+  parallax[1].classList.contains = name => name === 'hero-content';
   const document = Object.assign(makeElement(), {
     hidden: false, documentElement: root, body: makeElement(),
     querySelector: selector => selector === '.cursor-dot' ? dot : ring,
@@ -53,14 +55,14 @@ function setup({ light = false, reduced = false, width = 1440, height = 900, dpr
     MutationObserver: class { constructor(fn) { observers.push(fn); } observe() {} },
     Path2D: class { moveTo() {} lineTo() {} closePath() {} }
   });
-  const step = (count = 1) => {
+  const step = (count = 1, interval = 16.667) => {
     for (let i = 0; i < count; i++) {
-      time += 16.667;
+      time += interval;
       const pending = [...frames.values()]; frames.clear(); pending.forEach(fn => fn(time));
     }
   };
   return {
-    window, document, canvas, ctx, root, caches, frames, step, parallax,
+    window, document, canvas, ctx, root, caches, frames, step, parallax, dot, ring,
     get draws() { return draws; },
     theme(value) { light = value; observers.forEach(fn => fn()); },
     resize(w, h) { window.innerWidth = w; window.innerHeight = h; window.emit('resize'); const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); }
@@ -97,7 +99,9 @@ fx.step(300);
 assert.equal(fx.draws, 2, 'Moving the pointer refreshes the highlight');
 assert.equal(fx.caches[0].strokes, 1, 'Pointer movement reuses the grid');
 assert.equal(fx.frames.size, 0, 'Cursor easing eventually settles');
-assert.notEqual(fx.parallax[0].style['--px'], '0.0000');
+assert.match(fx.parallax[0].style.transform, /translate3d\(-/);
+assert.match(fx.parallax[1].style.transform, /translate3d\([\d.]+px/);
+assert.equal(fx.parallax[0].style['--px'], undefined, 'Moving a parent must not invalidate descendant custom properties');
 fx.window.emit('pointerdown', { clientX: 220, clientY: 310 });
 fx.step(30);
 assert(fx.ctx.arcs.length >= 3, 'Hold keeps producing ripple rings');
@@ -127,4 +131,15 @@ assert.equal(reduced.draws, 1);
 reduced.theme(true);
 assert.equal(reduced.draws, 2, 'Reduced-motion background still switches themes');
 assert.equal(reduced.frames.size, 0);
+// Easing has the same physical duration even when a device delivers fewer frames.
+const positions = [];
+for (const rate of [30, 60, 120]) {
+  const sample = setup({ light: true }); sample.step();
+  sample.window.emit('mousemove', { clientX: 220, clientY: 310 });
+  sample.step(rate / 5, 1000 / rate);
+  positions.push([sample.dot, sample.ring, ...sample.parallax].map(el =>
+    Number(/translate3d\(([-\d.]+)px/.exec(el.style.transform)[1])));
+}
+for (let i = 1; i < positions.length; i++) positions[i].forEach((position, j) =>
+  assert(Math.abs(position - positions[0][j]) < .002, 'Pointer and parallax must not trail longer at low refresh rates'));
 console.log('PASS: all particles/links across 900 frames, original DPR, cached light grid, idle sleep, cursor/parallax wake, ripples/trails, themes, resize, hidden/resume, and reduced motion.');

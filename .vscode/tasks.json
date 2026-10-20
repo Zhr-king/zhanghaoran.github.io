@@ -2,6 +2,17 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Schedule + Google Calendar",
+      "type": "process",
+      "command": "node",
+      "args": ["server/index.mjs"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "runOptions": { "instanceLimit": 1 }
+    },
+    {
       "label": "预览网页",
       "type": "process",
       "command": "python",

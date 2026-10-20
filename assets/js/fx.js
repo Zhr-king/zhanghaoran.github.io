@@ -44,7 +44,10 @@
   const spot = null;   /* 鼠标大光晕已移除（原 #spotlight），保留空引用让下方分支自然跳过 */
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas ? canvas.getContext('2d') : null;
-  const parallaxTargets = Array.from(document.querySelectorAll('.hero-rings, .hero-content, .float-chip'));
+  const parallaxTargets = Array.from(document.querySelectorAll('.hero-rings, .hero-content, .float-chip'), el => ({
+    el,
+    depth: el.classList.contains('hero-rings') ? 16 : el.classList.contains('hero-content') ? -8 : Number(el.style.getPropertyValue('--depth')) || 0
+  }));
   let frameId = 0, last = 0, needsDraw = true, pointerAnimating = true;
   let lastParX = '', lastParY = '';
 
@@ -72,6 +75,7 @@
     my = e.clientY;
     pointerAnimating = true;
     needsDraw = true;
+    if (!last) last = performance.now(); // Start easing from the event when an idle loop wakes.
     requestFrame();
     if (!mouseOn) {
       mouseOn = true;
@@ -479,19 +483,23 @@
   function frame(now) {
     frameId = 0;
     if (document.hidden) { last = 0; return; }
-    const dt = last ? Math.min(2.6, (now - last) / 16.667) : 1;
+    const elapsed = last ? Math.min(100, Math.max(0, now - last)) / 16.667 : 1;
+    const dt = Math.min(2.6, elapsed);
     last = now;
 
     if (pointerAnimating) {
       /* 缓动插值：settled pointers do not need further DOM updates. */
-      dotX = lerp(dotX, mx, 0.6);
-      dotY = lerp(dotY, my, 0.6);
-      ringX = lerp(ringX, mx, 0.16);
-      ringY = lerp(ringY, my, 0.16);
-      spotX = lerp(spotX, mx, 0.1);
-      spotY = lerp(spotY, my, 0.1);
-      parX = lerp(parX, (mx / window.innerWidth - 0.5) * 2, 0.06);
-      parY = lerp(parY, (my / window.innerHeight - 0.5) * 2, 0.06);
+      // Preserve the 60 Hz feel, but don't stretch the trailing time on slower frames.
+      const dotEase = 1 - Math.pow(0.4, elapsed), ringEase = 1 - Math.pow(0.84, elapsed);
+      const spotEase = 1 - Math.pow(0.9, elapsed), parEase = 1 - Math.pow(0.94, elapsed);
+      dotX = lerp(dotX, mx, dotEase);
+      dotY = lerp(dotY, my, dotEase);
+      ringX = lerp(ringX, mx, ringEase);
+      ringY = lerp(ringY, my, ringEase);
+      spotX = lerp(spotX, mx, spotEase);
+      spotY = lerp(spotY, my, spotEase);
+      parX = lerp(parX, (mx / window.innerWidth - 0.5) * 2, parEase);
+      parY = lerp(parY, (my / window.innerHeight - 0.5) * 2, parEase);
 
       if (useCursor) {
         dot.style.transform = 'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
@@ -499,12 +507,12 @@
       }
       if (spot) spot.style.transform = 'translate3d(' + spotX + 'px,' + spotY + 'px,0) translate(-50%,-50%)';
 
-      /* Scope inherited values to the elements that use them, not the whole page. */
+      /* Move the same layers directly: inherited CSS variables used to invalidate
+         every descendant of the hero content on each pointer frame. */
       const px = parX.toFixed(4), py = parY.toFixed(4);
       if (px !== lastParX || py !== lastParY) {
-        parallaxTargets.forEach(el => {
-          if (px !== lastParX) el.style.setProperty('--px', px);
-          if (py !== lastParY) el.style.setProperty('--py', py);
+        parallaxTargets.forEach(({ el, depth }) => {
+          el.style.transform = 'translate3d(' + (Number(px) * depth) + 'px,' + (Number(py) * depth) + 'px,0)';
         });
         lastParX = px; lastParY = py;
       }

@@ -50,8 +50,10 @@
 .agent-provider-heading small { font-size: calc(10px * var(--text-scale)); color: var(--text-dim); letter-spacing: .12em; }
 .agent-provider-mark { display: inline-grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid var(--line-strong); border-radius: 12px; background: linear-gradient(145deg, rgba(59, 130, 246, .17), rgba(34, 211, 238, .035)); color: var(--sky); font-size: calc(20px * var(--text-scale)); font-weight: 600; line-height: 1; }
 .agent-provider-icon { display: block; width: 26px; height: 26px; object-fit: contain; }
-.agent-provider-mark[data-provider="codex"] .agent-provider-icon { filter: brightness(0) invert(1); }
-html[data-theme="light"] .agent-provider-mark[data-provider="codex"] .agent-provider-icon { filter: brightness(0); }
+.agent-provider-mark[data-provider="codex"] .agent-provider-icon,
+.agent-glyph[data-provider="codex"] .agent-provider-icon { filter: brightness(0) invert(1); }
+html[data-theme="light"] .agent-provider-mark[data-provider="codex"] .agent-provider-icon,
+html[data-theme="light"] .agent-glyph[data-provider="codex"] .agent-provider-icon { filter: brightness(0); }
 .agent-provider-mark[data-provider="claude"] { color: var(--ink-soft); border-radius: 50%; }
 .agent-provider-mark[data-provider="gemini"] { background: linear-gradient(140deg, rgba(96, 165, 250, .23), rgba(139, 92, 246, .16)); }
 .agent-provider-mark[data-provider="deepseek-v4"] { color: var(--ice); background: rgba(37, 99, 235, .24); }

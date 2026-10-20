@@ -285,24 +285,33 @@
     const MAX = 7;
     document.querySelectorAll('[data-tilt]').forEach((card) => {
       let tiltFrame = 0, pointerX = 0, pointerY = 0;
+      let bounds = null;
+      const glare = card.querySelector('.glare');
       function updateTilt() {
         tiltFrame = 0;
-        const r = card.getBoundingClientRect();
+        // Measure at entry / layout changes, not after every transform write.
+        const r = bounds || (bounds = card.getBoundingClientRect());
         const px = (pointerX - r.left) / r.width;
         const py = (pointerY - r.top) / r.height;
         const ry = (px - 0.5) * 2 * MAX;
         const rx = -(py - 0.5) * 2 * MAX;
         card.style.transform =
           'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-4px)';
-        card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
-        card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+        glare?.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+        glare?.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
       }
+      card.addEventListener('pointerenter', () => { bounds = card.getBoundingClientRect(); });
+      window.addEventListener('scroll', () => { bounds = null; }, { passive: true });
+      window.addEventListener('resize', () => { bounds = null; }, { passive: true });
+      document.addEventListener('forgeos:languagechange', () => { bounds = null; });
+      if (typeof ResizeObserver === 'function') new ResizeObserver(() => { bounds = null; }).observe(card);
       card.addEventListener('pointermove', (e) => {
         pointerX = e.clientX; pointerY = e.clientY;
         if (!tiltFrame) tiltFrame = requestAnimationFrame(updateTilt);
       }, { passive: true });
       card.addEventListener('pointerleave', () => {
         cancelAnimationFrame(tiltFrame); tiltFrame = 0;
+        bounds = null;
         card.style.transform = '';
       });
     });

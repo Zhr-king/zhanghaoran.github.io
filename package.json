@@ -1,0 +1,18 @@
+{
+  "name": "forgeos-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node server/index.mjs",
+    "test:calendar": "node --test tests/calendar-server.test.mjs",
+    "test:planner": "node tests/planner.cjs",
+    "test:calendar-browser": "node tests/calendar-browser.cjs"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "0.5.1",
+    "@modelcontextprotocol/sdk": "1.32.1"
+  }
+}

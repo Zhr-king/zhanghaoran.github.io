@@ -16,7 +16,7 @@
   <link rel="canonical" href="https://forgeos.work/planner/">
   <link rel="stylesheet" href="../assets/css/style.css?v=20261013b">
   <link rel="stylesheet" href="../assets/css/planner.css?v=20261013b">
-  <link rel="stylesheet" href="../assets/css/agent.css?v=20261011c">
+  <link rel="stylesheet" href="../assets/css/agent.css?v=20261019">
   <link rel="stylesheet" href="../assets/css/onboarding.css?v=20261013b">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
@@ -41,13 +41,14 @@
         <p class="intro-copy" data-i18n-en="Capture a task. Review a plan. Adapt as your day changes.">记录任务，确认计划，让日程跟上你的变化。</p>
       </div>
       <div class="intro-side">
+        <a class="primary-btn" href="calendar.html" data-i18n-en="Google Calendar &#8599;">Google Calendar &#8599;</a>
         <button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button>
         <a class="back-link preview-link" href="template.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11"/></svg><span data-i18n-en="Design preview ↗">设计样板 ↗</span></a>
         <button type="button" class="module-guide-help" data-open-guide hidden data-i18n-en="Quick guide">使用指引</button>
       </div>
     </section>
     <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
-      <span class="agent-glyph" aria-hidden="true">✦</span>
+      <span class="agent-glyph" data-agent-default-mark aria-hidden="true">✦</span>
       <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="No AI agent is connected yet. Schedule uses local rules; review recognized tasks before saving. Your data stays in this browser.">尚未接入 AI 智能体，当前使用本地规则规划，请核对识别结果。数据仅保存在当前浏览器。</p></div>
       <div class="agent-entry-actions"><a class="agent-connect-link" href="agent.html#default" data-i18n-en="Choose default">选择默认智能体</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div>
     </section>
@@ -133,7 +134,7 @@
   <script src="../assets/js/ui.js?v=20261011c"></script>
   <script src="../assets/js/planner-core.js?v=20261008"></script>
   <script src="../assets/js/planner.js?v=20261011"></script>
-  <script src="../assets/js/agent-settings.js?v=20261011d"></script>
+  <script src="../assets/js/agent-settings.js?v=20261019"></script>
   <script src="../assets/js/onboarding.js?v=20261013b"></script>
 </body>
 </html>

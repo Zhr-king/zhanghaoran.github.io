@@ -11,6 +11,8 @@ ForgeOS project
 
 英文模式通过 `--text-scale` 将小字号放大 6%，中文字号和大标题保持原设置。特效引擎缓存浅色静态网格，静止时停止重复绘制；夜色星网保留全部粒子与连线，鼠标视差和卡片倾斜按需更新。运行 `node tests/fx.cjs` 检查粒子连线完整性、画布分辨率、休眠与唤醒、涟漪拖尾和主题切换。
 
+鼠标性能优化保留全部特效、粒子数量和原画布分辨率：视差改为直接移动目标层，光标缓动按实际时间推进，卡片缓存几何信息并缩小光泽样式的更新范围。同机核显对比、原因及复现步骤见 [性能检查记录](docs/PERFORMANCE.md)。
+
 本机安装 Chrome 和 Node.js 22 或更新版本后，可运行 `node tests/language.cjs` 检查语言切换、窄屏布局、主题兼容、动画和存储降级。Chrome 安装在其他位置时，用 `CHROME_PATH` 指定可执行文件。
 
 首页的代码工坊、灵感核心和系统面板尚未开放，使用灰色无光卡片与状态标识，不启用悬停发光或倾斜；时间规划及知识库入口保持点亮。文档中心与 CLI 的筹备入口也使用无光样式，点击可查看状态提示。
@@ -19,7 +21,9 @@ ForgeOS project
 
 分享图源文件为 `assets/images/social-card.svg`，发布使用同目录下的 PNG。执行 `node tests/language.cjs --render-social` 可重新生成 1200×630 分享图并运行检查。
 
-动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。当前尚未连接 AI 智能体或外部日历；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
+动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。该本地原型尚未连接 AI 智能体；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
+
+Google 日历接入页位于 `/planner/calendar.html`，Schedule 标题旁提供入口。配置 Google OAuth 后通过本地服务连接官方 Calendar MCP，录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。运行 `npm ci`、`npm start`，打开 `http://127.0.0.1:8787/planner/calendar.html`；首次授权和官方开发者预览资格见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。当前测试使用模拟日历，真实 Google 授权尚待配置验证。
 
 本地运行 `python -m http.server 5500 --bind 127.0.0.1`，打开 `http://127.0.0.1:5500/planner/` 即可体验。也可使用 VS Code 的“预览网页”任务。
 
