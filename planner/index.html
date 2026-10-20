@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="../assets/css/planner.css?v=20261013b">
   <link rel="stylesheet" href="../assets/css/agent.css?v=20261019">
   <link rel="stylesheet" href="../assets/css/onboarding.css?v=20261013b">
+  <link rel="stylesheet" href="../assets/css/planner-calendar.css?v=20261020">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
 </head>
 <body class="planner-page" data-onboarding="schedule">
@@ -41,7 +42,7 @@
         <p class="intro-copy" data-i18n-en="Capture a task. Review a plan. Adapt as your day changes.">记录任务，确认计划，让日程跟上你的变化。</p>
       </div>
       <div class="intro-side">
-        <a class="primary-btn" href="calendar.html" data-i18n-en="Google Calendar &#8599;">Google Calendar &#8599;</a>
+        <a class="primary-btn" href="#taskCalendarConnection" data-i18n-en="Calendar connection ↓">日历连接 ↓</a>
         <button class="secondary-btn" id="loadDemo" type="button" data-i18n-en="Try example tasks ↗">试用示例任务 ↗</button>
         <a class="back-link preview-link" href="template.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M9 9v11"/></svg><span data-i18n-en="Design preview ↗">设计样板 ↗</span></a>
         <button type="button" class="module-guide-help" data-open-guide hidden data-i18n-en="Quick guide">使用指引</button>
@@ -49,7 +50,7 @@
     </section>
     <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
       <span class="agent-glyph" data-agent-default-mark aria-hidden="true">✦</span>
-      <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="No AI agent is connected yet. Schedule uses local rules; review recognized tasks before saving. Your data stays in this browser.">尚未接入 AI 智能体，当前使用本地规则规划，请核对识别结果。数据仅保存在当前浏览器。</p></div>
+      <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="Task extraction uses local rules. Connect Google Calendar below to add reviewed tasks directly to your calendar.">任务识别暂用本地规则。连接下方 Google 日历，核对任务和时间后即可直接录入日程。</p></div>
       <div class="agent-entry-actions"><a class="agent-connect-link" href="agent.html#default" data-i18n-en="Choose default">选择默认智能体</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div>
     </section>
     <noscript><p class="prototype-note">请启用 JavaScript 使用任务和排程功能。 Enable JavaScript to use the planner.</p></noscript>
@@ -64,6 +65,18 @@
       <aside class="capture-column">
         <section class="planner-panel">
           <div class="panel-heading"><div><p class="eyebrow">01 / CAPTURE</p><h2 data-i18n-en="What is on your mind?">有什么待办？</h2></div><span class="step-icon" aria-hidden="true">＋</span></div>
+          <div id="taskCalendarConnection" class="task-calendar-connection">
+            <div class="task-calendar-heading"><strong>Google Calendar</strong><span id="taskCalendarState" role="status"></span></div>
+            <div class="task-calendar-actions">
+              <button id="taskCalendarConnect" class="secondary-btn" type="button" data-i18n-en="Connect Google Calendar">连接 Google 日历</button>
+              <button id="taskCalendarRefresh" class="text-btn" type="button" data-i18n-en="Refresh connection">刷新连接</button>
+              <button id="taskCalendarDisconnect" class="text-btn" type="button" hidden data-i18n-en="Disconnect">断开</button>
+            </div>
+            <div id="taskCalendarSelection" hidden><label for="taskCalendarTarget" data-i18n-en="Add to calendar">写入日历</label><select id="taskCalendarTarget"></select></div>
+            <p id="taskCalendarFeedback" class="field-help" role="status" aria-live="polite"></p>
+            <div class="task-calendar-actions"><span id="taskCalendarNetwork" class="field-help" role="status"></span><button id="taskCalendarNetworkCheck" type="button" class="text-btn" data-i18n-en="Detect network">检测网络</button></div>
+            <a id="taskCalendarLocal" href="http://127.0.0.1:8787/planner/" class="text-btn" hidden data-i18n-en="Open local Schedule ↗">打开本地 Schedule ↗</a>
+          </div>
           <form id="captureForm">
             <label for="naturalTask" data-i18n-en="Describe your task">用一句话描述任务</label>
             <textarea id="naturalTask" rows="3" maxlength="300" required placeholder="明天下午5点前完成项目报告，需要2小时，高优先级" data-i18n-placeholder-en="Finish the project report tomorrow by 17:00, 2 hours, high priority"></textarea>
@@ -71,6 +84,7 @@
             <button class="secondary-btn full-width" type="submit" data-i18n-en="Extract task details ↓">识别任务信息 ↓</button>
           </form>
           <form id="taskForm" class="task-form">
+            <fieldset id="taskFields">
             <div class="form-divider"><span id="editorHeading" data-i18n-en="REVIEW & ADD">核对并添加</span></div>
             <label for="taskTitle" data-i18n-en="Task name">任务名称</label><input id="taskTitle" maxlength="300" required>
             <div class="form-row">
@@ -78,8 +92,16 @@
               <div><label for="taskPriority" data-i18n-en="Priority">优先级</label><select id="taskPriority"><option value="normal" data-i18n-en="Normal">普通</option><option value="high" data-i18n-en="High">高</option></select></div>
             </div>
             <label for="taskDeadline" data-i18n-en="Deadline (local time)">截止时间（本地时间）</label><input id="taskDeadline" type="datetime-local" required>
+            <label class="task-calendar-toggle" for="taskCalendarSync"><input id="taskCalendarSync" type="checkbox" checked><span data-i18n-en="Also add to Google Calendar">同时添加到 Google 日历</span></label>
+            <div id="taskCalendarFields">
+              <label for="taskCalendarStart" data-i18n-en="Calendar start (local time)">日程开始时间（本地时间）</label><input id="taskCalendarStart" type="datetime-local" required>
+              <p class="field-help" data-i18n-en="End time = start + estimated minutes. Overlaps are allowed and the new event is marked red.">结束时间 = 开始时间 + 预计分钟。时间重叠仍会录入，新日程标红。</p>
+              <label for="taskCalendarLocation" data-i18n-en="Location / meeting link">地点 / 会议链接</label><input id="taskCalendarLocation" maxlength="1000">
+              <label for="taskCalendarDescription" data-i18n-en="Notes">备注</label><textarea id="taskCalendarDescription" rows="2" maxlength="8000"></textarea>
+            </div>
             <button class="primary-btn full-width" id="saveTask" type="submit" data-i18n-en="Add task +">添加任务 ＋</button>
             <button class="text-btn" id="cancelEdit" type="button" hidden data-i18n-en="Cancel editing">取消编辑</button>
+            </fieldset>
           </form>
         </section>
         <section class="planner-panel preferences-panel">
@@ -132,8 +154,9 @@
   </main>
   <script src="../assets/js/i18n.js?v=20261008"></script>
   <script src="../assets/js/ui.js?v=20261011c"></script>
-  <script src="../assets/js/planner-core.js?v=20261008"></script>
-  <script src="../assets/js/planner.js?v=20261011"></script>
+  <script src="../assets/js/planner-core.js?v=20261020"></script>
+  <script src="../assets/js/planner-calendar.js?v=20261020d"></script>
+  <script src="../assets/js/planner.js?v=20261020"></script>
   <script src="../assets/js/agent-settings.js?v=20261019"></script>
   <script src="../assets/js/onboarding.js?v=20261013b"></script>
 </body>

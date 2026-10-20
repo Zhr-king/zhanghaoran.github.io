@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +21,7 @@
       <div class="calendar-heading"><span class="calendar-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v5m10-5v5M3 11h18m-13 4h3m3 0h2"/></svg></span><div class="calendar-heading-copy"><p class="eyebrow">01 / CONNECT</p><h2 id="calendarTitle" data-i18n-en="Your Google Calendar">连接你的 Google 日历</h2></div><span class="agent-state" id="calendarState" role="status"></span></div>
       <div class="calendar-actions"><button class="primary-btn" id="connectCalendar" disabled data-i18n-en="Connect Google Calendar">连接 Google 日历</button><button class="secondary-btn" id="retryCalendar" data-i18n-en="Check connection">检查连接</button><button class="text-btn" id="disconnectCalendar" hidden data-i18n-en="Disconnect">断开连接</button></div>
       <p id="calendarFeedback" class="calendar-feedback" role="status" aria-live="polite"></p>
-      <details class="calendar-setup" id="calendarSetup" hidden><summary data-i18n-en="First-time setup">首次连接设置</summary><p data-i18n-en="Start the local service with npm start. Follow the setup guide to configure Google OAuth and Calendar MCP preview access, then connect your account.">运行 npm start 启动本地服务，按照接入说明配置 Google OAuth 和 Calendar MCP 开发者预览权限，再连接账号。</p><div class="calendar-actions"><a class="text-btn" href="http://127.0.0.1:8787/planner/calendar.html" data-i18n-en="Local workspace ↗">本地工作台 ↗</a><a class="text-btn" href="../docs/GOOGLE_CALENDAR_MCP.md" data-i18n-en="Setup guide ↗">接入说明 ↗</a></div></details>
+      <details class="calendar-setup" id="calendarSetup" hidden><summary data-i18n-en="First-time setup">首次连接设置</summary><p data-i18n-en="Use your personal Google account; no Workspace subscription is needed. Follow the setup guide to enable Google Calendar API, configure Google OAuth, and start the local service with npm start.">使用个人 Google 账号即可，无需购买 Workspace。按照接入说明启用 Google Calendar API、配置 Google OAuth，再运行 npm start 启动本地服务。</p><div class="calendar-actions"><a class="text-btn" href="http://127.0.0.1:8787/planner/calendar.html" data-i18n-en="Local workspace ↗">本地工作台 ↗</a><a class="text-btn" href="../docs/GOOGLE_CALENDAR_MCP.md" data-i18n-en="Setup guide ↗">接入说明 ↗</a></div></details>
       <div id="calendarSettings" hidden><label for="calendarTarget" data-i18n-en="Calendar to use">使用的日历</label><select id="calendarTarget"></select><p class="field-help" data-i18n-en="Overlaps are checked in this calendar. Events keep the time you enter.">在这个日历内检查时间重叠，按你填写的时间创建事件。</p></div>
     </section>
     <div class="calendar-workspace">
@@ -49,6 +49,6 @@
     </div>
     <noscript><p class="prototype-note">请启用 JavaScript 连接日历。 Enable JavaScript to connect your calendar.</p></noscript>
   </main>
-  <script src="../assets/js/i18n.js?v=20261013b"></script><script src="../assets/js/ui.js?v=20261013b"></script><script src="../assets/js/calendar.js?v=20261019b"></script>
+  <script src="../assets/js/i18n.js?v=20261013b"></script><script src="../assets/js/ui.js?v=20261013b"></script><script src="../assets/js/calendar.js?v=20261020c"></script>
 </body>
 </html>

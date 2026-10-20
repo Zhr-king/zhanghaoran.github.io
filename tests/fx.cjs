@@ -131,7 +131,25 @@ assert.equal(reduced.draws, 1);
 reduced.theme(true);
 assert.equal(reduced.draws, 2, 'Reduced-motion background still switches themes');
 assert.equal(reduced.frames.size, 0);
-// Easing has the same physical duration even when a device delivers fewer frames.
+// Fast direction changes must not leave the ring behind, even between animation frames.
+for (const light of [false, true]) {
+  const sample = setup({ light });
+  for (const [x, y] of [[10, 20], [1400, 850], [30, 800], [1200, 40]]) {
+    sample.window.emit('mousemove', { clientX: x, clientY: y });
+    for (const element of [sample.dot, sample.ring]) {
+      const position = /translate3d\(([-\d.]+)px,([-\d.]+)px/.exec(element.style.transform);
+      assert.equal(Number(position[1]), x, 'Cursor follows the latest input without waiting for canvas rendering');
+      assert.equal(Number(position[2]), y);
+    }
+  }
+  const latest = sample.ring.style.transform;
+  sample.step(1, 100);
+  assert.equal(sample.ring.style.transform, latest, 'A delayed frame must not move the ring back toward an old position');
+  sample.document.emit('mouseleave');
+  sample.window.emit('mousemove', { clientX: 400, clientY: 300 });
+  assert.match(sample.ring.style.transform, /translate3d\(400px,300px/, 'Re-entry starts at the pointer instead of flying in from its old position');
+}
+// Parallax easing keeps the same duration at different refresh rates; cursors remain aligned.
 const positions = [];
 for (const rate of [30, 60, 120]) {
   const sample = setup({ light: true }); sample.step();

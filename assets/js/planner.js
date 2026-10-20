@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const core = window.ForgePlanner;
+  const calendar = window.ForgeTaskCalendar;
   const $ = id => document.getElementById(id);
   const tr = (zh, en) => window.ForgeI18n.language === 'en' ? en : zh;
   const KEY = 'forgeos:planner:v1';
@@ -9,7 +10,7 @@
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && core.dateKey(new Date(value + 'T12:00')) === value;
   const validDeadline = value => typeof value === 'string' && value.length === 16 && validDate(value.slice(0, 10)) && validTime(value.slice(11)) && value[10] === 'T';
   let state = defaults(), proposal = null, editing = null, selectedDay = 0;
-  let loadFailed = false;
+  let loadFailed = false, savingTask = false;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) {
@@ -33,8 +34,8 @@
   }
   function notify(zh, en, error = false) { $('feedback').textContent = tr(zh, en); $('feedback').classList.toggle('error', error); }
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); }
-    catch (error) { notify('浏览器无法保存数据，本次操作仅在当前页面有效。', 'Browser storage is unavailable. Changes will last only while this page stays open.', true); }
+    try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+    catch (error) { notify('浏览器无法保存数据，本次操作仅在当前页面有效。', 'Browser storage is unavailable. Changes will last only while this page stays open.', true); return false; }
   }
   function changed(zh, en) { proposal = null; notify(zh, en); persist(); render(); }
   function locale() { return window.ForgeI18n.language === 'en' ? 'en-GB' : 'zh-CN'; }
@@ -43,12 +44,14 @@
   function slotText(slot) { return `${formatDate(slot.start)} · ${formatTime(slot.start)}–${formatTime(slot.end)}`; }
   function empty(parent, title, copy) { const block = node('div', undefined, 'empty-state'); block.append(node('strong', title), node('span', copy)); parent.append(block); }
   function selectedDate() { const date = new Date(); date.setDate(date.getDate() + selectedDay); return date; }
-  function activeSlots() { return state.schedule.filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done)); }
+  function googleSlots() { return state.tasks.filter(task => task.googleEvent && Number.isFinite(task.googleEvent.start) && Number.isFinite(task.googleEvent.end)).map(task => ({ taskId: task.id, start: task.googleEvent.start, end: task.googleEvent.end })); }
+  function activeSlots() { return [...state.schedule.filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done && !task.googleEvent)), ...googleSlots().filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done))]; }
   function resetEditor() {
     editing = null; $('taskForm').reset(); $('cancelEdit').hidden = true;
     const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
     $('taskDeadline').value = `${core.dateKey(tomorrow)}T18:00`;
     $('saveTask').textContent = tr('添加任务 ＋', 'Add task +');
+    calendar.setEditing(false);
   }
   function renderSchedule() {
     const date = selectedDate(), key = core.dateKey(date);
@@ -66,13 +69,14 @@
     const blocks = state.events.filter(event => event.date === key).map(event => ({ ...event, start: core.at(event.date, event.start), end: core.at(event.date, event.end), fixed: true }));
     activeSlots().filter(slot => core.dateKey(new Date(slot.start)) === key).forEach(slot => {
       const task = state.tasks.find(task => task.id === slot.taskId);
-      blocks.push({ ...slot, title: task.title, fixed: false, conflict: state.events.some(event => core.overlaps(slot, { start: core.at(event.date, event.start), end: core.at(event.date, event.end) })) });
+      blocks.push({ ...slot, title: task.title, fixed: false, google: !!task.googleEvent, googleOverlap: task.googleOverlap, conflict: state.events.some(event => core.overlaps(slot, { start: core.at(event.date, event.start), end: core.at(event.date, event.end) })) });
     });
     $('scheduleList').replaceChildren();
     blocks.sort((a, b) => a.start - b.start).forEach(block => {
       const row = node('div', undefined, 'schedule-item');
-      const card = node('div', undefined, 'schedule-block' + (block.fixed ? ' fixed' : ''));
-      card.append(node('strong', block.title), node('small', `${Math.round((block.end - block.start) / 60000)} ${tr('分钟', 'min')} · ${block.fixed ? tr('固定安排', 'Fixed event') : tr('已确认', 'Confirmed')}`));
+      const card = node('div', undefined, 'schedule-block' + (block.fixed ? ' fixed' : '') + (block.googleOverlap ? ' google-overlap' : ''));
+      card.append(node('strong', block.title), node('small', `${Math.round((block.end - block.start) / 60000)} ${tr('分钟', 'min')} · ${block.google ? 'Google Calendar' : block.fixed ? tr('固定安排', 'Fixed event') : tr('已确认', 'Confirmed')}`));
+      if (block.googleOverlap) card.append(node('small', tr('时间重叠 · 已在 Google 日历标红', 'Time overlap · marked red in Google Calendar'), 'conflict-line'));
       if (block.conflict) card.append(node('small', tr('与固定安排冲突，请重新排程', 'Overlaps a fixed event. Replanning needed.'), 'conflict-line'));
       row.append(node('span', `${formatTime(block.start)}–${formatTime(block.end)}`, 'schedule-time'), card);
       $('scheduleList').append(row);
@@ -115,30 +119,41 @@
       const complete = action(task.done ? '✓' : '○', () => {
         task.done = !task.done;
         state.schedule = state.schedule.filter(slot => slot.taskId !== task.id);
-        changed('任务状态已更新，请按需重新生成建议。', 'Task status updated. Generate a fresh plan when needed.');
+        changed(task.googleEvent ? '本地完成状态已更新，Google 日程保留。' : '任务状态已更新，请按需重新生成建议。', task.googleEvent ? 'Local completion updated; the Google event is kept.' : 'Task status updated. Generate a fresh plan when needed.');
       }, 'complete-btn');
       complete.setAttribute('aria-label', `${task.done ? tr('恢复任务：', 'Reopen task: ') : tr('完成任务：', 'Complete task: ')}${task.title}`);
       complete.setAttribute('aria-pressed', String(task.done));
       const body = node('div');
       body.append(node('strong', task.title, 'task-name'), node('p', `${task.duration} ${tr('分钟', 'min')} · ${task.priority === 'high' ? tr('高优先级', 'High priority') : tr('普通', 'Normal')} · ${tr('截止 ', 'Due ')}${formatDate(task.deadline)} ${formatTime(task.deadline)}`, 'task-meta'));
       const actions = node('div', undefined, 'task-actions');
-      actions.append(action(tr('编辑', 'Edit'), () => {
+      if (task.googleEvent) {
+        body.append(node('span', task.googleOverlap ? tr('已同步 Google · 时间重叠', 'Synced to Google · time overlap') : tr('已同步 Google 日历', 'Synced to Google Calendar'), 'task-google-status' + (task.googleOverlap ? ' overlapping' : '')));
+        try {
+          const url = new URL(task.googleEvent.htmlLink);
+          if (url.protocol === 'https:' && ['calendar.google.com', 'www.google.com'].includes(url.hostname)) {
+            const link = node('a', tr('查看 / 编辑 Google 日程 ↗', 'View / edit Google event ↗'), 'text-btn'); link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer'; actions.append(link);
+          }
+        } catch {}
+      }
+      if (!task.googleEvent) actions.append(action(tr('编辑', 'Edit'), () => {
+        if (savingTask) return;
         editing = task.id; $('taskTitle').value = task.title; $('taskDuration').value = task.duration;
         $('taskPriority').value = task.priority; $('taskDeadline').value = task.deadline;
         $('saveTask').textContent = tr('保存修改', 'Save changes'); $('cancelEdit').hidden = false;
+        calendar.setEditing(true);
         $('taskTitle').focus();
       }));
-      if (!task.done) actions.append(action(tr('延长 30 分钟并重排', '+30 min & replan'), () => {
+      if (!task.done && !task.googleEvent) actions.append(action(tr('延长 30 分钟并重排', '+30 min & replan'), () => {
         if (task.duration + 30 > 720) { notify('单个任务最多支持 720 分钟，请拆分任务。', 'A task can be at most 720 minutes. Split it into smaller tasks.', true); return; }
         task.duration += 30;
         if (editing === task.id) $('taskDuration').value = task.duration;
         notify('已增加预计时长，新的排程建议等待确认。', 'Duration increased. Review and confirm the new proposal.');
         persist(); generate(false);
       }));
-      actions.append(action(tr('删除', 'Delete'), () => {
+      actions.append(action(task.googleEvent ? tr('移出待办', 'Remove from tasks') : tr('删除', 'Delete'), () => {
         state.tasks = state.tasks.filter(item => item.id !== task.id); state.schedule = state.schedule.filter(slot => slot.taskId !== task.id);
         if (editing === task.id) resetEditor();
-        changed('任务已删除。', 'Task deleted.');
+        changed(task.googleEvent ? '已移出本地待办，Google 日程仍保留。' : '任务已删除。', task.googleEvent ? 'Removed from local tasks; the Google event is kept.' : 'Task deleted.');
       }));
       body.append(actions); row.append(complete, body); list.append(row);
     });
@@ -160,14 +175,16 @@
     $('saveTask').textContent = editing ? tr('保存修改', 'Save changes') : tr('添加任务 ＋', 'Add task +');
     $('naturalTask').placeholder = tr('明天下午5点前完成项目报告，需要2小时，高优先级', 'Finish the project report tomorrow by 17:00, 2 hours, high priority');
     renderSchedule(); renderProposal(); renderTasks(); renderEvents();
+    calendar.render();
   }
   function generate(announce = true) {
-    proposal = core.plan(state.tasks, state.events, state.preferences);
+    proposal = core.plan(state.tasks.filter(task => !task.googleEvent), state.events, state.preferences, new Date(), googleSlots());
     if (announce) notify('建议已生成，请检查后确认。', 'Proposal generated. Review it before confirming.');
     render();
   }
   $('captureForm').addEventListener('submit', event => {
     event.preventDefault();
+    if (savingTask) return;
     if (!$('naturalTask').value.trim()) return;
     const parsed = core.parse($('naturalTask').value);
     resetEditor(); $('taskTitle').value = parsed.title; $('taskDuration').value = parsed.duration;
@@ -175,13 +192,40 @@
     notify('已按本地规则填写。未识别的时长默认 60 分钟，日期默认今天、时间默认 18:00，请核对。', 'Filled using local rules. Missing details default to 60 minutes, today, and 18:00. Please review all fields.');
     $('taskTitle').focus();
   });
-  $('taskForm').addEventListener('submit', event => {
+  $('taskForm').addEventListener('submit', async event => {
     event.preventDefault();
+    if (savingTask) return;
     const title = $('taskTitle').value.trim(), duration = Number($('taskDuration').value), deadline = $('taskDeadline').value;
     if (!title || !Number.isInteger(duration) || duration < 15 || duration > 720 || !validDeadline(deadline) || new Date(deadline).getTime() <= Date.now()) {
       notify('请填写任务名称、15–720 分钟的时长，以及未来的截止时间。', 'Enter a task name, 15–720 minutes, and a future deadline.', true); return;
     }
     const task = { id: editing || crypto.randomUUID(), title, duration, deadline, priority: $('taskPriority').value, done: state.tasks.find(task => task.id === editing)?.done || false };
+    if (!editing && $('taskCalendarSync').checked) {
+      const start = new Date($('taskCalendarStart').value).getTime(), end = start + duration * 60000;
+      if (!Number.isFinite(start) || start < Date.now() || end > new Date(deadline).getTime()) {
+        notify('请填写未来的日程开始时间，并确保开始时间加预计时长不晚于截止时间。', 'Choose a future calendar start and ensure the duration fits before the deadline.', true); return;
+      }
+      savingTask = true; $('taskFields').disabled = true; calendar.setSubmitting(true);
+      try {
+        const result = await calendar.add(task);
+        task.id = result.requestId; task.googleEvent = result.event; task.googleOverlap = result.overlap;
+        if (!state.tasks.some(item => item.id === task.id)) state.tasks.push(task);
+        proposal = null;
+        const stored = persist();
+        if (stored) calendar.committed();
+        resetEditor(); $('naturalTask').value = '';
+        const day = new Date(result.event.start), today = new Date();
+        selectedDay = Math.max(0, Math.min(6, Math.round((Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000)));
+        const conflicts = result.conflicts.map(item => item.title).join('、');
+        if (!stored) notify('已添加到 Google 日历，但浏览器无法保存本地待办。', 'Added to Google Calendar, but browser storage could not save the local task.', true);
+        else notify(result.overlap ? `任务已添加到 Google 日历并标红。重叠日程：${conflicts}` : '任务已添加到待办和 Google 日历。',
+          result.overlap ? `Added to Google Calendar in red. Overlaps: ${conflicts}` : 'Task added to your task list and Google Calendar.');
+      } catch (error) {
+        calendar.report(error);
+        notify('Google 录入未确认，任务内容已保留，请查看上方提示后重试。', 'Google entry is not confirmed. Your draft is kept; check the message above and retry.', true);
+      } finally { savingTask = false; $('taskFields').disabled = false; calendar.setSubmitting(false); render(); }
+      return;
+    }
     if (editing) state.tasks = state.tasks.map(item => item.id === editing ? task : item);
     else state.tasks.push(task);
     resetEditor(); $('naturalTask').value = '';
@@ -238,7 +282,7 @@
   window.addEventListener('hashchange', revealTaskPoolFromLink);
   document.addEventListener('forgeos:languagechange', () => { $('feedback').textContent = ''; render(); });
   $('workStart').value = state.preferences.start; $('workEnd').value = state.preferences.end; $('focusTime').value = state.preferences.focus;
-  $('eventDate').value = core.dateKey(new Date()); resetEditor(); render();
+  $('eventDate').value = core.dateKey(new Date()); resetEditor(); calendar.restoreDraft(); render();
   revealTaskPoolFromLink();
   if (loadFailed) notify('无法读取本地规划数据。当前使用空白工作台，保存可能不可用。', 'Local planning data could not be read. Starting with an empty workspace; saving may be unavailable.', true);
 })();

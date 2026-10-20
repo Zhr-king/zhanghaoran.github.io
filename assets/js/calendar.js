@@ -9,11 +9,21 @@
     SERVICE_UNAVAILABLE: ['请运行 npm start，并打开本地工作台。', 'Run npm start and open the local workspace.'],
     GOOGLE_NOT_CONFIGURED: ['本地服务已启动，请先按接入说明填写 Google OAuth 配置。', 'The service is running. Configure Google OAuth using the setup guide.'],
     GOOGLE_AUTH_FAILED: ['Google 授权未完成，请重新连接。', 'Google authorization did not complete. Reconnect.'],
+    GOOGLE_AUTH_NETWORK_FAILED: ['本地服务无法连接 Google，授权未完成。请检查本机网络或服务的代理配置后重新连接。', 'The local service cannot reach Google. Check its network or proxy settings, then reconnect.'],
+    GOOGLE_NETWORK_UNAVAILABLE: ['未找到可连接 Google 的线路，请开启本地代理 / VPN 后重新连接。', 'No working route to Google was found. Start your proxy / VPN and reconnect.'],
+    GOOGLE_AUTH_INVALID_RESPONSE: ['Google 授权接口返回异常，请检查网络后重新连接。', 'Google returned an unexpected authorization response. Check the network and reconnect.'],
+    GOOGLE_AUTH_SESSION_EXPIRED: ['授权会话已过期或丢失，请在当前页面重新连接，并保持服务运行。', 'The authorization session expired or was lost. Reconnect here and keep the service running.'],
+    GOOGLE_CLIENT_REJECTED: ['Google 拒绝了客户端凭据，请检查本地 Client ID 和 Client Secret，更新后重启服务。', 'Google rejected the client credentials. Check your local Client ID and Client Secret, then restart the service.'],
+    GOOGLE_AUTH_CODE_EXPIRED: ['授权码已失效，请重新点击连接 Google 日历，不要刷新授权回调页面。', 'The authorization code is no longer valid. Start a new connection instead of refreshing the callback.'],
+    GOOGLE_PROFILE_FAILED: ['授权后读取 Google 账号信息失败，请重新连接并授予账号信息权限。', 'Could not read your Google account information. Reconnect and grant account information access.'],
     SIGN_IN_REQUIRED: ['登录已失效，请重新连接 Google 日历。', 'Your session expired. Reconnect Google Calendar.'],
     SESSION_REQUIRED: ['请检查连接后重新登录。', 'Check the connection and sign in again.'],
-    MCP_CONNECTION_FAILED: ['无法连接 Google Calendar MCP，请检查网络、API 启用状态和开发者预览权限。', 'Cannot reach Google Calendar MCP. Check your network, enabled APIs and developer preview access.'],
-    MCP_TOOL_FAILED: ['Google 日历读取失败，请检查权限后重试。', 'Google Calendar could not be read. Check permissions and retry.'],
-    MCP_TOOL_UNAVAILABLE: ['Google MCP 尚未提供所需工具，请检查开发者预览权限。', 'A required Google MCP tool is unavailable. Check developer preview access.'],
+    CALENDAR_CONNECTION_FAILED: ['无法连接 Google 日历，请检查网络后重试。', 'Cannot reach Google Calendar. Check your network and retry.'],
+    CALENDAR_API_DISABLED: ['请在 Google Cloud 项目中启用 Google Calendar API，再重试。', 'Enable Google Calendar API in your Google Cloud project, then retry.'],
+    CALENDAR_ACCESS_DENIED: ['Google 日历拒绝访问，请检查日历权限并重新授权。', 'Google Calendar denied access. Check calendar permissions and reconnect.'],
+    CALENDAR_RATE_LIMITED: ['Google 日历请求暂时达到限额，请稍后重试。', 'Google Calendar request limit reached. Please retry later.'],
+    CALENDAR_API_FAILED: ['Google 日历暂时无法完成请求，请稍后重试。', 'Google Calendar could not complete the request. Please retry later.'],
+    CALENDAR_INVALID_RESPONSE: ['Google 日历返回了无法识别的结果，请重试。', 'Google Calendar returned an unexpected response. Please retry.'],
     CALENDAR_READ_ONLY: ['这个日历为只读，请选择可写日历。', 'This calendar is read-only. Choose a writable calendar.'],
     CALENDAR_NOT_READABLE: ['无法读取这个日历，暂不能检查重叠。', 'This calendar cannot be read to check overlaps.'],
     CALENDAR_NOT_ACCESSIBLE: ['无法访问所选日历，请检查连接并重新选择。', 'This calendar is no longer accessible. Check the connection and select again.'],
@@ -104,6 +114,7 @@
     try {
       status = await api('status');
       if (!status.configured) throw { code: 'GOOGLE_NOT_CONFIGURED' };
+      if (!status.authenticated && status.authError) throw { code: status.authError };
       if (status.authenticated) {
         calendars = (await api('calendars', {})).calendars;
         let saved; try { saved = localStorage.getItem('forgeos:calendar-target'); } catch {}
@@ -155,5 +166,11 @@
   document.addEventListener('forgeos:languagechange', render);
   const start = new Date(); start.setMinutes(0, 0, 0); start.setHours(start.getHours() + 1);
   $('eventStart').value = localValue(start); $('eventEnd').value = localValue(new Date(start.getTime() + 3600000)); $('calendarDate').value = dateKey(new Date());
-  connectStatus().then(() => { if (new URLSearchParams(location.search).get('calendar') === 'auth-failed') { errorMessage({ code: 'GOOGLE_AUTH_FAILED' }); render(); } });
+  const callbackState = new URLSearchParams(location.search).get('calendar');
+  if (callbackState) { const cleanUrl = new URL(location.href); cleanUrl.searchParams.delete('calendar'); history.replaceState(null, '', cleanUrl); }
+  connectStatus().then(() => {
+    if (!status.authenticated && !feedback && ['auth-failed', 'session-expired'].includes(callbackState)) {
+      errorMessage({ code: callbackState === 'session-expired' ? 'GOOGLE_AUTH_SESSION_EXPIRED' : 'GOOGLE_AUTH_FAILED' }); render();
+    }
+  });
 })();

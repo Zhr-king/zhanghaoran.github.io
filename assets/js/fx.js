@@ -62,8 +62,6 @@
   let my = window.innerHeight / 2;
   let mouseOn = false;
 
-  let dotX = mx, dotY = my;       // 光标实心点（快）
-  let ringX = mx, ringY = my;     // 光标外环（慢，带滞后感）
   let spotX = mx, spotY = my;     // 聚光灯（更慢）
   let parX = 0, parY = 0;         // 视差归一化值 -1..1
 
@@ -73,6 +71,13 @@
   window.addEventListener('mousemove', (e) => {
     mx = e.clientX;
     my = e.clientY;
+    // Keep the cursor centered on the latest input, independent of canvas FPS.
+    // Hover/click sizing still animates through the existing CSS transitions.
+    if (useCursor) {
+      const transform = 'translate3d(' + mx + 'px,' + my + 'px,0) translate(-50%,-50%)';
+      dot.style.transform = transform;
+      ring.style.transform = transform;
+    }
     pointerAnimating = true;
     needsDraw = true;
     if (!last) last = performance.now(); // Start easing from the event when an idle loop wakes.
@@ -478,7 +483,7 @@
   }
 
   /* ----------------------------------------------------------
-     八、主循环：光标缓动 + 聚光 + 视差
+     八、主循环：聚光 + 视差（光标位置在输入事件中更新）
      ---------------------------------------------------------- */
   function frame(now) {
     frameId = 0;
@@ -490,21 +495,12 @@
     if (pointerAnimating) {
       /* 缓动插值：settled pointers do not need further DOM updates. */
       // Preserve the 60 Hz feel, but don't stretch the trailing time on slower frames.
-      const dotEase = 1 - Math.pow(0.4, elapsed), ringEase = 1 - Math.pow(0.84, elapsed);
       const spotEase = 1 - Math.pow(0.9, elapsed), parEase = 1 - Math.pow(0.94, elapsed);
-      dotX = lerp(dotX, mx, dotEase);
-      dotY = lerp(dotY, my, dotEase);
-      ringX = lerp(ringX, mx, ringEase);
-      ringY = lerp(ringY, my, ringEase);
       spotX = lerp(spotX, mx, spotEase);
       spotY = lerp(spotY, my, spotEase);
       parX = lerp(parX, (mx / window.innerWidth - 0.5) * 2, parEase);
       parY = lerp(parY, (my / window.innerHeight - 0.5) * 2, parEase);
 
-      if (useCursor) {
-        dot.style.transform = 'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
-        ring.style.transform = 'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
-      }
       if (spot) spot.style.transform = 'translate3d(' + spotX + 'px,' + spotY + 'px,0) translate(-50%,-50%)';
 
       /* Move the same layers directly: inherited CSS variables used to invalidate
@@ -516,9 +512,7 @@
         });
         lastParX = px; lastParY = py;
       }
-      pointerAnimating = Math.abs(dotX - mx) + Math.abs(dotY - my) > .001 ||
-        Math.abs(ringX - mx) + Math.abs(ringY - my) > .001 ||
-        Math.abs(parX - (mx / window.innerWidth - .5) * 2) + Math.abs(parY - (my / window.innerHeight - .5) * 2) > .00001;
+      pointerAnimating = Math.abs(parX - (mx / window.innerWidth - .5) * 2) + Math.abs(parY - (my / window.innerHeight - .5) * 2) > .00001;
     }
 
     if (ctx && (needsDraw || !light || hold || ripples.length || trail.length)) {

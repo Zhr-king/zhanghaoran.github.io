@@ -23,7 +23,7 @@ ForgeOS project
 
 动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。该本地原型尚未连接 AI 智能体；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
 
-Google 日历接入页位于 `/planner/calendar.html`，Schedule 标题旁提供入口。配置 Google OAuth 后通过本地服务连接官方 Calendar MCP，录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。运行 `npm ci`、`npm start`，打开 `http://127.0.0.1:8787/planner/calendar.html`；首次授权和官方开发者预览资格见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。当前测试使用模拟日历，真实 Google 授权尚待配置验证。
+Schedule 主页面 `/planner/` 的「有什么待办？」已接入 Google 日历：在同一页面授权、选择日历，填写开始时间和预计时长，点击「添加任务并同步日历」即可同时加入待办和真实日历。默认勾选同步，取消可仅保存本地；失败保留草稿，重试避免重复创建。旧 `/planner/calendar.html` 保留为独立入口。配置 Google OAuth 后通过本地服务连接标准 Google Calendar API，个人 Google 账号即可使用，无需 Workspace 订阅或 MCP 预览资格。录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。运行 `npm ci`、`npm start`，打开 `http://127.0.0.1:8787/planner/`；首次配置见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。当前测试使用模拟日历，真实 Google 授权尚待配置验证。
 
 本地运行 `python -m http.server 5500 --bind 127.0.0.1`，打开 `http://127.0.0.1:5500/planner/` 即可体验。也可使用 VS Code 的“预览网页”任务。
 

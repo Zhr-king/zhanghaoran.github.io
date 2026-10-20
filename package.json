@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server/index.mjs",
-    "test:calendar": "node --test tests/calendar-server.test.mjs",
+    "test:calendar": "node --test tests/calendar-server.test.mjs tests/proxy-discovery.test.mjs",
     "test:planner": "node tests/planner.cjs",
     "test:calendar-browser": "node tests/calendar-browser.cjs"
   },
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
-    "@modelcontextprotocol/sdk": "1.32.1"
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "undici": "7.30.1"
   }
 }

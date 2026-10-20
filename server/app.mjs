@@ -2,11 +2,15 @@ import http from 'node:http';
 import { randomBytes } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
-import { CalendarError, GoogleMcp } from './google-mcp.mjs';
+import { CalendarError } from './google-mcp.mjs';
+import { GoogleCalendar } from './google-calendar.mjs';
 import { GoogleOAuth } from './oauth.mjs';
+import { createGoogleTransport } from './google-transport.mjs';
 import { CalendarService, Journal } from './calendar-service.mjs';
 
 const random = () => randomBytes(32).toString('base64url');
+const AUTH_ERRORS = new Set(['GOOGLE_AUTH_FAILED', 'GOOGLE_AUTH_NETWORK_FAILED', 'GOOGLE_AUTH_INVALID_RESPONSE',
+  'GOOGLE_AUTH_SESSION_EXPIRED', 'GOOGLE_CLIENT_REJECTED', 'GOOGLE_AUTH_CODE_EXPIRED', 'GOOGLE_PROFILE_FAILED']);
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webp': 'image/webp', '.woff2': 'font/woff2', '.md': 'text/plain' };
 async function body(req) {
   let size = 0; const chunks = [];
@@ -17,9 +21,10 @@ function json(res, status, value) { res.writeHead(status, { 'Content-Type': 'app
 
 // Deliberately local and single-user. No remote bind address or cross-origin API.
 export function createApp(config, dependencies = {}) {
-  const oauth = dependencies.oauth || new GoogleOAuth(config);
+  const transport = dependencies.transport || createGoogleTransport(config.proxyUrl);
+  const oauth = dependencies.oauth || new GoogleOAuth(config, transport.request);
   const service = dependencies.service || new CalendarService(new Journal(config.dataDirectory));
-  const mcpFor = dependencies.mcpFor || (session => new GoogleMcp(() => oauth.accessToken(session)));
+  const calendarFor = dependencies.calendarFor || (session => new GoogleCalendar(() => oauth.accessToken(session), transport.request));
   const sessions = new Map();
   let queue = Promise.resolve();
   const serialized = work => { const next = queue.then(work); queue = next.catch(() => {}); return next; };
@@ -50,19 +55,39 @@ export function createApp(config, dependencies = {}) {
         sessions.set(session.id, session);
         res.setHeader('Set-Cookie', `forgeos_session=${session.id}; HttpOnly; SameSite=Lax; Path=/api/calendar; Max-Age=28800`);
       }
+      if (!session && route === '/api/calendar/oauth/callback' && req.method === 'GET') {
+        res.writeHead(303, { Location: '/planner/calendar.html?calendar=session-expired' }); res.end(); return;
+      }
       if (!session) throw new CalendarError('SESSION_REQUIRED', 401);
       if (route === '/api/calendar/oauth/callback' && req.method === 'GET') {
-        try { await oauth.finish(session, url.searchParams); res.writeHead(303, { Location: '/planner/calendar.html?calendar=connected' }); }
-        catch { res.writeHead(303, { Location: '/planner/calendar.html?calendar=auth-failed' }); }
+        const returnTo = session.oauth?.returnTo === '/planner/' ? '/planner/' : '/planner/calendar.html';
+        try { await oauth.finish(session, url.searchParams); res.writeHead(303, { Location: returnTo + '?calendar=connected' }); }
+        catch (error) {
+          session.authError = AUTH_ERRORS.has(error.code) ? error.code : 'GOOGLE_AUTH_FAILED';
+          // Only an allowlisted category is logged, never tokens, callback URLs or Google response bodies.
+          console.warn('Google OAuth callback: ' + session.authError);
+          res.writeHead(303, { Location: returnTo + '?calendar=auth-failed' });
+        }
         res.end(); return;
       }
       if (req.method === 'GET' && route === '/api/calendar/status') {
-        json(res, 200, { available: true, configured: oauth.configured, authenticated: Boolean(session.tokens), email: session.tokens ? session.user?.email : '', csrf: session.csrf }); return;
+        json(res, 200, { available: true, configured: oauth.configured, authenticated: Boolean(session.tokens), email: session.tokens ? session.user?.email : '', authError: session.authError || '', network: transport.status(), csrf: session.csrf }); return;
       }
       if (req.method !== 'POST') throw new CalendarError('METHOD_NOT_ALLOWED', 405);
       if (req.headers.origin !== origin || req.headers['x-forgeos-csrf'] !== session.csrf || !req.headers['content-type']?.startsWith('application/json')) throw new CalendarError('CSRF_FAILED', 403);
       const input = await body(req);
-      if (route === '/api/calendar/auth/start') { json(res, 200, { url: oauth.begin(session) }); return; }
+      if (route === '/api/calendar/network/check') {
+        const network = await transport.check(true);
+        // A resolved network fault should not keep hiding the connection form.
+        if (session.authError === 'GOOGLE_AUTH_NETWORK_FAILED') delete session.authError;
+        json(res, 200, { network }); return;
+      }
+      if (route === '/api/calendar/auth/start') {
+        if (oauth.configured) await transport.check();
+        const url = oauth.begin(session);
+        if (input.returnTo === '/planner/') session.oauth.returnTo = '/planner/';
+        json(res, 200, { url }); return;
+      }
       if (route === '/api/calendar/disconnect') {
         // Local session disconnect, not revocation of all Google grants.
         sessions.delete(session.id);
@@ -76,11 +101,11 @@ export function createApp(config, dependencies = {}) {
         if (!sessions.has(session.id) || session.expires < Date.now() || session.user !== account) throw new CalendarError('SIGN_IN_REQUIRED', 401);
         const identity = { ...session };
         const previousTokens = identity.tokens;
-        const mcp = mcpFor(identity);
+        const calendar = calendarFor(identity);
         try {
-          if (route === '/api/calendar/calendars') return { calendars: await service.calendars(mcp) };
-          if (route === '/api/calendar/read') return await service.read(mcp, identity.user.id, input);
-          if (route === '/api/calendar/events') return await service.create(mcp, identity.user.id, input);
+          if (route === '/api/calendar/calendars') return { calendars: await service.calendars(calendar) };
+          if (route === '/api/calendar/read') return await service.read(calendar, identity.user.id, input);
+          if (route === '/api/calendar/events') return await service.create(calendar, identity.user.id, input);
           throw new CalendarError('NOT_FOUND', 404);
         } finally {
           if (session.user === account && session.tokens === previousTokens) session.tokens = identity.tokens;
@@ -94,5 +119,7 @@ export function createApp(config, dependencies = {}) {
     }
   });
   server.requestTimeout = 120000;
+  server.checkGoogleNetwork = () => transport.check();
+  server.once('close', () => { transport.close().catch(() => {}); });
   return server;
 }

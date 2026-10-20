@@ -14,11 +14,14 @@ const redirectUri = process.env.GOOGLE_REDIRECT_URI || origin + '/api/calendar/o
 if (redirectUri !== origin + '/api/calendar/oauth/callback') throw new Error('GOOGLE_REDIRECT_URI must match the local origin and callback path.');
 const dataDirectory = path.resolve(process.env.FORGEOS_DATA_DIR || path.join(os.homedir(), '.forgeos', 'calendar'));
 if (dataDirectory === root || dataDirectory.startsWith(root + path.sep)) throw new Error('FORGEOS_DATA_DIR must be outside the website directory.');
-const config = { root, dataDirectory, redirectUri, clientId: process.env.GOOGLE_CLIENT_ID || '', clientSecret: process.env.GOOGLE_CLIENT_SECRET || '' };
+const config = { root, dataDirectory, redirectUri, clientId: process.env.GOOGLE_CLIENT_ID || '', clientSecret: process.env.GOOGLE_CLIENT_SECRET || '', proxyUrl: process.env.GOOGLE_PROXY_URL?.trim() || 'auto' };
 const server = createApp(config);
 server.on('error', error => { console.error('Local service could not start: ' + error.code); process.exitCode = 1; });
 server.listen(port, '127.0.0.1', () => {
-  console.log(`ForgeOS: ${origin}/planner/calendar.html`);
+  console.log(`ForgeOS: ${origin}/planner/`);
   console.log(config.clientId && config.clientSecret ? 'Google OAuth configured. Connect from Schedule.' : 'Google OAuth not configured. See docs/GOOGLE_CALENDAR_MCP.md.');
+  server.checkGoogleNetwork().then(network => {
+    console.log(network.kind === 'proxy' ? 'Google API network: proxy tunnel ready (' + network.endpoint + ').' : 'Google API network: system connection ready.');
+  }).catch(() => console.warn('Google API network unavailable. Start your proxy/VPN and use Check network in Schedule.'));
 });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));

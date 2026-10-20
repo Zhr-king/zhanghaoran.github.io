@@ -27,11 +27,11 @@
     return { title: text.trim(), duration, deadline: `${date}T${time}`, priority: /紧急|高优先|urgent|high priority/i.test(text) ? 'high' : 'normal' };
   }
 
-  function plan(tasks, events, preferences, now = new Date()) {
+  function plan(tasks, events, preferences, now = new Date(), reserved = []) {
     const slots = [], issues = [];
     const startMinute = minutes(preferences.start), endMinute = minutes(preferences.end);
     if (!(startMinute < endMinute)) return { slots, issues: [{ reason: 'hours' }] };
-    const busy = events.map(event => ({ start: at(event.date, event.start), end: at(event.date, event.end) }));
+    const busy = [...reserved, ...events.map(event => ({ start: at(event.date, event.start), end: at(event.date, event.end) }))];
     const pending = tasks.filter(task => !task.done).slice().sort((a, b) =>
       (a.priority === 'high' ? 0 : 1) - (b.priority === 'high' ? 0 : 1) ||
       new Date(a.deadline) - new Date(b.deadline) || a.id.localeCompare(b.id));

@@ -76,9 +76,9 @@ export class CalendarService {
     const key = hash(input.requestId), signature = hash(payload);
     if (this.writing) fail('WRITE_IN_PROGRESS', 409);
     this.writing = true;
-    let attempted = false;
+    let attempted = false, creating = false, records;
     try {
-      const records = await this.journal.load(userId);
+      records = await this.journal.load(userId);
       let record = records[key];
       if (record && record.signature !== signature) fail('REQUEST_CHANGED', 409);
       if (record?.result) return record.result;
@@ -99,12 +99,14 @@ export class CalendarService {
         records[key] = record;
         await this.journal.save(userId, records);
         attempted = true;
+        creating = true;
         const result = eventValue(await call('create_event', {
           calendarId: options.calendarId, summary: payload.title,
           startTime: options.startTime, endTime: options.endTime, timeZone: 'UTC',
           description: payload.description + '\n\n' + record.marker, location: payload.location,
           ...(conflicts.length ? { colorId: '11' } : {})
         }));
+        creating = false;
         if (!safeId(result.id)) fail('UNCERTAIN_WRITE', 502);
         record.eventId = result.id; await this.journal.save(userId, records);
         return await finish(eventValue(await call('get_event', { calendarId: options.calendarId, eventId: result.id })));
@@ -118,6 +120,12 @@ export class CalendarService {
         }
       });
     } catch (error) {
+      if (creating && error.writeRejected) {
+        delete records[key];
+        try { await this.journal.save(userId, records); }
+        catch { throw new CalendarError('UNCERTAIN_WRITE', 502); }
+        throw error;
+      }
       if (attempted) throw new CalendarError('UNCERTAIN_WRITE', 502);
       throw error;
     } finally { this.writing = false; }
