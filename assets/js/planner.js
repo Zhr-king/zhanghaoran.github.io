@@ -10,7 +10,7 @@
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && core.dateKey(new Date(value + 'T12:00')) === value;
   const validDeadline = value => typeof value === 'string' && value.length === 16 && validDate(value.slice(0, 10)) && validTime(value.slice(11)) && value[10] === 'T';
   let state = defaults(), proposal = null, editing = null, selectedDay = 0;
-  let loadFailed = false, savingTask = false;
+  let loadFailed = false, savingTask = false, taskMessage = null;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) {
@@ -33,6 +33,32 @@
     button.type = 'button'; button.addEventListener('click', handler); return button;
   }
   function notify(zh, en, error = false) { $('feedback').textContent = tr(zh, en); $('feedback').classList.toggle('error', error); }
+  function renderTaskFeedback() {
+    const feedback = $('taskSubmitFeedback');
+    feedback.hidden = !taskMessage;
+    feedback.textContent = taskMessage ? tr(...taskMessage.pair) : '';
+    feedback.classList.toggle('error', !!taskMessage?.error);
+  }
+  function clearTaskFeedback() {
+    taskMessage = null;
+    $('taskForm').querySelectorAll('[aria-invalid="true"]').forEach(input => {
+      input.removeAttribute('aria-invalid');
+      const describedBy = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== 'taskSubmitFeedback');
+      if (describedBy.length) input.setAttribute('aria-describedby', describedBy.join(' '));
+      else input.removeAttribute('aria-describedby');
+    });
+    renderTaskFeedback();
+  }
+  function notifyTask(zh, en, error = false, fieldId) {
+    taskMessage = { pair: [zh, en], error };
+    notify(zh, en, error); renderTaskFeedback();
+    if (fieldId) {
+      const input = $(fieldId + 'Display') || $(fieldId);
+      input.setAttribute('aria-invalid', 'true');
+      input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), 'taskSubmitFeedback'].filter(Boolean).join(' '));
+    }
+    if (error) $('taskSubmitFeedback').scrollIntoView({ block: 'nearest' });
+  }
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
     catch (error) { notify('浏览器无法保存数据，本次操作仅在当前页面有效。', 'Browser storage is unavailable. Changes will last only while this page stays open.', true); return false; }
@@ -47,7 +73,7 @@
   function googleSlots() { return state.tasks.filter(task => task.googleEvent && Number.isFinite(task.googleEvent.start) && Number.isFinite(task.googleEvent.end)).map(task => ({ taskId: task.id, start: task.googleEvent.start, end: task.googleEvent.end })); }
   function activeSlots() { return [...state.schedule.filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done && !task.googleEvent)), ...googleSlots().filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done))]; }
   function resetEditor() {
-    editing = null; $('taskForm').reset(); $('cancelEdit').hidden = true;
+    editing = null; $('taskForm').reset(); $('cancelEdit').hidden = true; clearTaskFeedback();
     const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
     $('taskDeadline').value = `${core.dateKey(tomorrow)}T18:00`;
     $('saveTask').textContent = tr('添加任务 ＋', 'Add task +');
@@ -137,6 +163,7 @@
       }
       if (!task.googleEvent) actions.append(action(tr('编辑', 'Edit'), () => {
         if (savingTask) return;
+        clearTaskFeedback();
         editing = task.id; $('taskTitle').value = task.title; $('taskDuration').value = task.duration;
         $('taskPriority').value = task.priority; $('taskDeadline').value = task.deadline;
         $('saveTask').textContent = tr('保存修改', 'Save changes'); $('cancelEdit').hidden = false;
@@ -175,7 +202,7 @@
     $('saveTask').textContent = editing ? tr('保存修改', 'Save changes') : tr('添加任务 ＋', 'Add task +');
     $('naturalTask').placeholder = tr('明天下午5点前完成项目报告，需要2小时，高优先级', 'Finish the project report tomorrow by 17:00, 2 hours, high priority');
     renderSchedule(); renderProposal(); renderTasks(); renderEvents();
-    calendar.render();
+    calendar.render(); renderTaskFeedback();
   }
   function generate(announce = true) {
     proposal = core.plan(state.tasks.filter(task => !task.googleEvent), state.events, state.preferences, new Date(), googleSlots());
@@ -192,20 +219,49 @@
     notify('已按本地规则填写。未识别的时长默认 60 分钟，日期默认今天、时间默认 18:00，请核对。', 'Filled using local rules. Missing details default to 60 minutes, today, and 18:00. Please review all fields.');
     $('taskTitle').focus();
   });
+  // Browser validation runs before submit. Keep these errors beside the button,
+  // in the page's language, as well as marking the field that needs attention.
+  $('taskForm').addEventListener('invalid', event => {
+    event.preventDefault();
+    const first = Array.from($('taskForm').elements).find(input => input.willValidate && !input.validity.valid);
+    if (event.target !== first) return;
+    clearTaskFeedback();
+    const id = first.id.replace(/Display$/, '');
+    const pair = {
+      taskTitle: ['请填写任务名称。', 'Enter a task name.'],
+      taskDuration: ['预计分钟需填写 15–720 之间的整数。', 'Enter a whole number of minutes between 15 and 720.'],
+      taskDeadline: ['请选择有效的截止日期和时间。', 'Choose a valid deadline date and time.'],
+      taskCalendarStart: ['请选择日程开始日期和时间。', 'Choose a calendar start date and time.']
+    }[id] || ['请检查任务字段的填写内容。', 'Check the task fields.'];
+    notifyTask(...pair, true, id);
+    first.focus({ preventScroll: true });
+  }, true);
+  $('taskForm').addEventListener('input', () => { if (taskMessage?.error) clearTaskFeedback(); });
   $('taskForm').addEventListener('submit', async event => {
     event.preventDefault();
     if (savingTask) return;
+    clearTaskFeedback();
     const title = $('taskTitle').value.trim(), duration = Number($('taskDuration').value), deadline = $('taskDeadline').value;
-    if (!title || !Number.isInteger(duration) || duration < 15 || duration > 720 || !validDeadline(deadline) || new Date(deadline).getTime() <= Date.now()) {
-      notify('请填写任务名称、15–720 分钟的时长，以及未来的截止时间。', 'Enter a task name, 15–720 minutes, and a future deadline.', true); return;
+    if (!title) return notifyTask('请填写任务名称。', 'Enter a task name.', true, 'taskTitle');
+    if (!Number.isInteger(duration) || duration < 15 || duration > 720) {
+      return notifyTask('预计分钟需填写 15–720 之间的整数。', 'Enter a whole number of minutes between 15 and 720.', true, 'taskDuration');
+    }
+    if (!validDeadline(deadline) || new Date(deadline).getTime() <= Date.now()) {
+      return notifyTask('截止时间需晚于当前时间，请调整截止日期或时间。', 'The deadline must be in the future. Update its date or time.', true, 'taskDeadline');
     }
     const task = { id: editing || crypto.randomUUID(), title, duration, deadline, priority: $('taskPriority').value, done: state.tasks.find(task => task.id === editing)?.done || false };
     if (!editing && $('taskCalendarSync').checked) {
       const start = new Date($('taskCalendarStart').value).getTime(), end = start + duration * 60000;
-      if (!Number.isFinite(start) || start < Date.now() || end > new Date(deadline).getTime()) {
-        notify('请填写未来的日程开始时间，并确保开始时间加预计时长不晚于截止时间。', 'Choose a future calendar start and ensure the duration fits before the deadline.', true); return;
+      if (!validDeadline($('taskCalendarStart').value) || !Number.isFinite(start) || start <= Date.now()) {
+        return notifyTask('日程开始时间需晚于当前时间，请重新选择。', 'Choose a calendar start in the future.', true, 'taskCalendarStart');
+      }
+      if (end > new Date(deadline).getTime()) {
+        const endText = `${core.dateKey(new Date(end))} ${formatTime(end)}`, deadlineText = deadline.replace('T', ' ');
+        return notifyTask(`按当前开始时间和时长，日程将在 ${endText} 结束，晚于截止时间 ${deadlineText}。请提前开始、缩短时长或延后截止时间。`,
+          `This event would end at ${endText}, after the deadline (${deadlineText}). Choose an earlier start, shorten the duration, or extend the deadline.`, true, 'taskCalendarStart');
       }
       savingTask = true; $('taskFields').disabled = true; calendar.setSubmitting(true);
+      notifyTask('正在添加任务并同步 Google 日历…', 'Adding your task and syncing Google Calendar…');
       try {
         const result = await calendar.add(task);
         task.id = result.requestId; task.googleEvent = result.event; task.googleOverlap = result.overlap;
@@ -217,19 +273,22 @@
         const day = new Date(result.event.start), today = new Date();
         selectedDay = Math.max(0, Math.min(6, Math.round((Date.UTC(day.getFullYear(), day.getMonth(), day.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000)));
         const conflicts = result.conflicts.map(item => item.title).join('、');
-        if (!stored) notify('已添加到 Google 日历，但浏览器无法保存本地待办。', 'Added to Google Calendar, but browser storage could not save the local task.', true);
-        else notify(result.overlap ? `任务已添加到 Google 日历并标红。重叠日程：${conflicts}` : '任务已添加到待办和 Google 日历。',
+        if (!stored) notifyTask('已添加到 Google 日历，但浏览器无法保存本地待办。', 'Added to Google Calendar, but browser storage could not save the local task.', true);
+        else notifyTask(result.overlap ? `任务已添加到 Google 日历并标红。重叠日程：${conflicts}` : '任务已添加到待办和 Google 日历。',
           result.overlap ? `Added to Google Calendar in red. Overlaps: ${conflicts}` : 'Task added to your task list and Google Calendar.');
       } catch (error) {
-        calendar.report(error);
-        notify('Google 录入未确认，任务内容已保留，请查看上方提示后重试。', 'Google entry is not confirmed. Your draft is kept; check the message above and retry.', true);
+        const pair = calendar.report(error);
+        notifyTask(...pair, true);
       } finally { savingTask = false; $('taskFields').disabled = false; calendar.setSubmitting(false); render(); }
       return;
     }
     if (editing) state.tasks = state.tasks.map(item => item.id === editing ? task : item);
     else state.tasks.push(task);
     resetEditor(); $('naturalTask').value = '';
-    changed('任务已保存。生成新建议并确认后，修改才会应用到日程。', 'Task saved. Generate and confirm a new proposal to apply changes to your schedule.');
+    proposal = null;
+    const stored = persist(); render();
+    if (stored) notifyTask('任务已保存。生成新建议并确认后，修改才会应用到日程。', 'Task saved. Generate and confirm a new proposal to apply changes to your schedule.');
+    else notifyTask('浏览器无法保存数据，本次操作仅在当前页面有效。', 'Browser storage is unavailable. Changes will last only while this page stays open.', true);
   });
   $('cancelEdit').addEventListener('click', resetEditor);
   $('preferencesForm').addEventListener('submit', event => {

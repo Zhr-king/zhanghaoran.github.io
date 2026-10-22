@@ -23,7 +23,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     {id:'all-day',summary:'Today is reserved',start:{date:key(today)},end:{date:key(tomorrow)}},
     {id:'meeting',summary:'Team meeting',start:{dateTime:meetingStart.toISOString()},end:{dateTime:meetingEnd.toISOString()}}
   ],tasks:[]};
-  let writeCount=0,failRead=false,loseResponse=false;
+  let writeCount=0,failRead=false,loseResponse=false,holdWrite=false,releaseWrite;
   const calendar=new GoogleCalendar(async()=>'fixture-only',async(url,init)=>{
     assert.equal(url.origin,'https://www.googleapis.com');
     assert.equal(init.headers.Authorization,'Bearer fixture-only');
@@ -42,6 +42,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
       const item={...JSON.parse(init.body),id:'task-'+writeCount,htmlLink:'https://calendar.google.com/calendar/event?eid=test'};
       remoteEvents[calendarId].push(item);
       if(loseResponse){loseResponse=false;throw new Error('Response lost after committed write');}
+      if(holdWrite){holdWrite=false;await new Promise(resolve=>{releaseWrite=resolve;});}
       return Response.json(item);
     }
     throw new Error('Unexpected Calendar operation');
@@ -49,16 +50,24 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   let oauthFailure=true;
   const oauth={
     configured:true,
-    begin(session){delete session.authError;session.oauth={state:'test-state'};return 'http://127.0.0.1:'+server.address().port+'/api/calendar/oauth/callback?state=test-state&code=fixture';},
-    async finish(session,params){assert.equal(session.oauth.state,params.get('state'));if(oauthFailure)throw new CalendarError('GOOGLE_AUTH_NETWORK_FAILED',502);session.tokens={access_token:'fixture-only'};session.user={id:'browser-user',email:'test@example.test'};delete session.oauth;delete session.authError;}
+    begin(session){delete session.authError;session.oauth={state:'test-state',expires:Date.now()+60000};return 'http://127.0.0.1:'+server.address().port+'/api/calendar/oauth/callback?state=test-state&code=fixture';},
+    async finish(session,params){assert.equal(session.oauth.state,params.get('state'));delete session.oauth;if(oauthFailure)throw new CalendarError('GOOGLE_AUTH_NETWORK_FAILED',502);session.tokens={access_token:'fixture-only'};session.user={id:'browser-user',email:'test@example.test'};delete session.oauth;delete session.authError;}
   };
-  const networkState={mode:'auto',state:'ready',kind:'proxy',endpoint:'127.0.0.1:7993',source:'application'};
-  const transport={status:()=>networkState,check:async()=>networkState,close:async()=>{}};
-  const server=createApp({root,dataDirectory:directory},{oauth,transport,calendarFor:()=>calendar,service:new CalendarService(new Journal(directory))});
+  const networkState={mode:'auto',state:'idle',kind:'',source:''};
+  const transport={status:()=>networkState,close:async()=>{}};
+  let externalOpens=0;
+  const authorizationPages=[];
+  const server=createApp({root,dataDirectory:directory},{oauth,transport,calendarFor:()=>calendar,service:new CalendarService(new Journal(directory)),openBrowser:async url=>{
+    externalOpens++;
+    const response=await fetch(url,{redirect:'manual'}); // Separate browser: no initiating cookie.
+    assert.equal(response.status,200);
+    authorizationPages.push(await response.text());
+    return true;
+  }});
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'forgeos-planner-'));
   const browser = spawn(process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', [
-    '--headless=new', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'
+    '--headless=new', '--lang=zh-CN', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'
   ], { stdio: 'ignore', windowsHide: true });
   let launchError, socket;
   browser.on('error', error => { launchError = error; });
@@ -95,6 +104,11 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const base = `http://127.0.0.1:${server.address().port}`;
     const until=async expression=>{for(let i=0;i<150;i++){try {if(await evaluate(expression))return;}catch(e){if(!/context|navigat/i.test(e.message))throw e;}await sleep(50);}throw new Error('Wait failed: '+expression);};
     const click=id=>evaluate('document.getElementById('+JSON.stringify(id)+').click()');
+    const pointerClick=async id=>{
+      const point=await evaluate('(()=>{const el=document.getElementById('+JSON.stringify(id)+');el.scrollIntoView({block:"center",behavior:"instant"});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()');
+      await send('Input.dispatchMouseEvent',{type:'mousePressed',...point,button:'left',clickCount:1});
+      await send('Input.dispatchMouseEvent',{type:'mouseReleased',...point,button:'left',clickCount:1});
+    };
     await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
     await send('Page.navigate',{url:base+'/planner/calendar.html'});
     await until('document.readyState==="complete" && document.getElementById("connectCalendar") && !document.getElementById("connectCalendar").disabled');
@@ -137,6 +151,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     failRead=false;await click('readCalendar');await until('!document.getElementById("readCalendar").disabled');
     for(const language of ['zh-CN','en']){
       if(await evaluate('document.documentElement.lang')!==language)await click('languageToggle');
+      if(language==='en') assert.doesNotMatch(await evaluate('document.body.innerText'), /[\u3400-\u9fff]/, 'English interface contains no Chinese');
       for(const theme of ['dark','light']){
         await evaluate('document.documentElement.dataset.theme='+JSON.stringify(theme));
         for(const width of [320,375,768,1440]){
@@ -150,15 +165,75 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     // The main Schedule capture form now writes directly to Google Calendar.
     await send('Page.navigate',{url:base+'/planner/'});
     await until('document.getElementById("taskCalendarConnect") && !document.getElementById("taskCalendarConnect").disabled');
-    await click('taskCalendarNetworkCheck');
-    await until('!document.getElementById("taskCalendarNetworkCheck").disabled');
-    assert.match(await evaluate('document.getElementById("taskCalendarNetwork").textContent'),/127\.0\.0\.1:7993/);
+    assert.equal(await evaluate('document.getElementById("taskCalendarNetworkCheck")'),null,'No network scan button');
+    assert.match(await evaluate('document.getElementById("taskCalendarNetwork").textContent'),/system network|系统网络/);
+    await evaluate('document.querySelector("[data-guide-action=skip]")?.click(); document.getElementById("taskCalendarStartDisplay").scrollIntoView({block:"center"})');
+    // Browser-native dates may use Chinese even when the page is English.
+    // Our visible fields and popup must follow the page and preserve ISO values.
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").placeholder'),'YYYY-MM-DD HH:mm');
+    const openDate=()=>evaluate('document.getElementById("taskCalendarStartDisplay").parentElement.querySelector("button").click()');
+    await openDate();
+    assert.doesNotMatch(await evaluate('document.getElementById("forgeDatePicker").innerText'),/[\u3400-\u9fff]/);
+    await click('languageToggle');
+    assert.match(await evaluate('document.getElementById("forgeDatePicker").innerText'),/小时/);
+    assert.match(await evaluate('document.getElementById("taskCalendarStartDisplay").placeholder'),/年/);
+    await click('languageToggle');
+    assert.doesNotMatch(await evaluate('document.getElementById("forgeDatePicker").innerText'),/[\u3400-\u9fff]/);
+    for(const width of [320,1440]) {
+      await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<500});
+      await evaluate('window.dispatchEvent(new Event("resize"))');
+      assert.equal(await evaluate('(()=>{const r=document.getElementById("forgeDatePicker").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1;})()'),true,'Picker fits the viewport');
+    }
+    await evaluate('document.getElementById("taskCalendarStartDisplay").scrollIntoView({block:"center"}); window.dispatchEvent(new Event("resize"))');
+    const dateScreenshot=await send('Page.captureScreenshot',{format:'png'});
+    fs.writeFileSync(path.join(profile,'date-picker.png'),Buffer.from(dateScreenshot.data,'base64'));
+    console.log('Date picker screenshot: '+path.join(profile,'date-picker.png'));
+    await evaluate('document.querySelector(".forge-date-day[aria-pressed=true]").click(); for(const [part,value] of [["hour","9"],["minute","30"]]){const el=document.querySelector("[data-time-part="+part+"]");el.value=value;el.dispatchEvent(new Event("input"));} document.querySelector(".forge-date-done").click()');
+    assert.equal(await evaluate('document.getElementById("taskCalendarStart").value'),key(today)+'T09:30');
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").value'),key(today)+' 09:30');
+    await evaluate('(()=>{const el=document.getElementById("taskCalendarStartDisplay");el.value="2026-02-30 09:00";el.dispatchEvent(new Event("input"));})()');
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").checkValidity()'),false);
+    assert.equal(await evaluate('document.getElementById("taskCalendarStart").value'),'');
+    await evaluate('document.getElementById("taskCalendarStart").value='+JSON.stringify(key(tomorrow)+'T10:15'));
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").value'),key(tomorrow)+' 10:15','Programmatic task drafts update visible fields');
+    await evaluate('document.getElementById("taskForm").reset()');
+    assert.equal(await evaluate('document.getElementById("taskCalendarStart").value'),'','Reset clears the canonical value');
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").value'),'','Reset clears the visible value');
     const fillTask=async(title,start)=>evaluate('Object.entries('+JSON.stringify({taskTitle:title,taskDuration:'60',taskDeadline:key(tomorrow)+'T23:00',taskCalendarStart:local(start),taskCalendarLocation:'Task room',taskCalendarDescription:'Task notes'})+').forEach(([id,value])=>document.getElementById(id).value=value)');
     await fillTask('Main page capture',meetingStart);
+    await click('languageToggle');
+    assert.equal(await evaluate('document.documentElement.lang'),'zh-CN');
     await click('taskCalendarConnect');
     await until('document.getElementById("taskCalendarDisconnect") && !document.getElementById("taskCalendarDisconnect").hidden');
     assert.equal(await evaluate('location.pathname'),'/planner/','OAuth returns to main Schedule');
     assert.equal(await evaluate('document.getElementById("taskTitle").value'),'Main page capture','OAuth preserves the draft');
+    // Reproduce the reported click: 17:11 + 120 minutes exceeds a 17:00 deadline.
+    // The message must be visible at the button, even when the page header is offscreen.
+    await click('languageToggle');
+    await evaluate('Object.entries('+JSON.stringify({taskDuration:'120',taskDeadline:key(tomorrow)+'T17:00',taskCalendarStart:key(tomorrow)+'T17:11'})+').forEach(([id,value])=>document.getElementById(id).value=value)');
+    await pointerClick('saveTask');
+    assert.equal(writeCount,2,'An invalid time range must not write to Google');
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/19:11.*after the deadline.*17:00/);
+    assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").getAttribute("aria-invalid")'),'true');
+    assert.equal(await evaluate('(()=>{const el=document.getElementById("taskSubmitFeedback"),r=el.getBoundingClientRect();return !el.hidden&&r.top>=0&&r.bottom<=innerHeight;})()'),true,'Validation is visible at the form');
+    const validationScreenshot=await send('Page.captureScreenshot',{format:'png'});
+    fs.writeFileSync(path.join(profile,'task-validation.png'),Buffer.from(validationScreenshot.data,'base64'));
+    console.log('Task validation screenshot: '+path.join(profile,'task-validation.png'));
+    await click('languageToggle');
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/晚于截止时间/);
+    await click('languageToggle');
+    assert.doesNotMatch(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/[\u3400-\u9fff]/);
+    // Native validation can prevent submit entirely; it still needs an inline message.
+    await evaluate('document.getElementById("taskCalendarStart").value=""');
+    await pointerClick('saveTask');
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Choose a calendar start date and time/);
+    assert.equal(writeCount,2);
+    await evaluate('document.getElementById("taskCalendarStartDisplay").focus();document.getElementById("taskCalendarStartDisplay").select()');
+    await send('Input.insertText',{text:key(tomorrow)+' 14:00'});
+    assert.equal(await evaluate('document.getElementById("taskCalendarStart").value'),key(tomorrow)+'T14:00');
+    assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").hidden'),true,'Editing clears the outdated error');
+    assert.equal(await evaluate('document.getElementById("taskForm").checkValidity()'),true);
+    await fillTask('Main page capture',meetingStart);
     await evaluate('document.getElementById("taskForm").requestSubmit();document.getElementById("taskForm").requestSubmit()');
     await until('!document.getElementById("taskFields").disabled && document.querySelector(".task-google-status")');
     assert.equal(writeCount,3,'Main page double submission creates one Google event');
@@ -166,11 +241,14 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(remoteEvents.work.at(-1).location,'Task room');
     assert.equal(remoteEvents.work.at(-1).description.startsWith('Task notes'),true);
     assert.equal(await evaluate('document.querySelectorAll(".schedule-block.google-overlap").length'),1);
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Added to Google Calendar/);
+    assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").classList.contains("error")'),false);
     const syncedStart=await evaluate('JSON.parse(localStorage.getItem("forgeos:planner:v1")).tasks[0].googleEvent.start');
     failRead=true;await fillTask('Retry from main page',later);await click('saveTask');
     await until('!document.getElementById("taskFields").disabled && document.getElementById("taskCalendarFeedback").classList.contains("error")');
     assert.equal(writeCount,3);
     assert.equal(await evaluate('document.getElementById("taskTitle").value'),'Retry from main page');
+    assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),await evaluate('document.getElementById("taskCalendarFeedback").textContent'),'The API failure reason appears beside the submit button');
     failRead=false;await click('saveTask');
     await until('!document.getElementById("taskFields").disabled && document.querySelectorAll(".task-google-status").length===2');
     assert.equal(writeCount,4);
@@ -198,8 +276,26 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await click('confirmPlan');
     assert.equal(await evaluate('JSON.parse(localStorage.getItem("forgeos:planner:v1")).tasks[0].googleEvent.start'),syncedStart);
     assert.equal(writeCount,5);
+    // Correct the user's example to 14:00–16:00, and exercise an actual click and
+    // a pending API request so progress, success and the submitted times are checked.
+    await fillTask('Corrected report example',later);
+    await evaluate('Object.entries('+JSON.stringify({taskDuration:'120',taskDeadline:key(tomorrow)+'T17:00',taskCalendarStart:key(tomorrow)+'T14:00'})+').forEach(([id,value])=>document.getElementById(id).value=value)');
+    holdWrite=true;
+    await pointerClick('saveTask');
+    for(let i=0;i<100&&!releaseWrite;i++)await sleep(20);
+    assert.equal(typeof releaseWrite,'function');
+    assert.equal(await evaluate('document.getElementById("saveTask").matches(":disabled")'),true);
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Adding your task and syncing/);
+    releaseWrite();
+    await until('!document.getElementById("taskFields").disabled && document.querySelectorAll(".task-google-status").length===4');
+    assert.equal(writeCount,6);
+    const exampleStart=new Date(tomorrow);exampleStart.setHours(14);
+    assert.equal(remoteEvents.work.at(-1).start.dateTime,exampleStart.toISOString());
+    assert.equal(remoteEvents.work.at(-1).end.dateTime,new Date(exampleStart.getTime()+120*60000).toISOString());
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Added to Google Calendar/);
     for(const language of ['zh-CN','en']){
       if(await evaluate('document.documentElement.lang')!==language)await click('languageToggle');
+      if(language==='en') assert.doesNotMatch(await evaluate('document.body.innerText'), /[\u3400-\u9fff]/, 'English interface contains no Chinese');
       for(const theme of ['dark','light']){
         await evaluate('document.documentElement.dataset.theme='+JSON.stringify(theme));
         for(const width of [320,375,768,1440]){
@@ -211,6 +307,14 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const mainScreenshot=await send('Page.captureScreenshot',{format:'png'});
     fs.writeFileSync(path.join(profile,'schedule-capture.png'),Buffer.from(mainScreenshot.data,'base64'));
     console.log('Main Schedule screenshot: '+path.join(profile,'schedule-capture.png'));
+    assert.equal(externalOpens,3,'Both pages authorize through a separate browser and update automatically');
+    for (const html of authorizationPages.slice(0,2)) {
+      assert.match(html, /<html lang="en">/);
+      assert.doesNotMatch(html, /[\u3400-\u9fff]/, 'English success and failure pages contain no Chinese');
+    }
+    assert.match(authorizationPages[2], /<html lang="zh-CN">/);
+    assert.match(authorizationPages[2], /Google 日历已连接/);
+    assert.doesNotMatch(authorizationPages[2], /Return to ForgeOS/);
     assert.deepEqual(errors,[]);
     console.log('PASS: local OAuth/HTTP, calendar capture, overlap allowed/red Google event, double submit, nonoverlap, failed read, drafts, both languages/themes, responsive layouts and disconnect.');
   } finally { if(socket)socket.close();browser.kill();server.close(); }

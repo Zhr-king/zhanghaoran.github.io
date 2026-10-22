@@ -1,4 +1,5 @@
 import { CalendarError } from './google-mcp.mjs';
+import { NETWORK_ERRORS } from './google-transport.mjs';
 
 // Standard Calendar v3 works with a personal Google account. No remote MCP
 // preview enrollment or Workspace subscription is involved in this adapter.
@@ -16,7 +17,7 @@ export class GoogleCalendar {
           headers: { Authorization: 'Bearer ' + token, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
           body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(20000)
         });
-      } catch { throw new CalendarError('CALENDAR_CONNECTION_FAILED', 502); }
+      } catch (error) { if (NETWORK_ERRORS.has(error.code)) throw error; throw new CalendarError('CALENDAR_CONNECTION_FAILED', 502); }
       let data;
       try { data = await response.json(); } catch { throw new CalendarError('CALENDAR_INVALID_RESPONSE', 502); }
       if (!response.ok) {

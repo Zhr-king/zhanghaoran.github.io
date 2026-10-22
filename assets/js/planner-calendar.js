@@ -7,10 +7,10 @@
   const fields = ['naturalTask', 'taskTitle', 'taskDuration', 'taskPriority', 'taskDeadline', 'taskCalendarStart', 'taskCalendarLocation', 'taskCalendarDescription'];
   let status = {}, busy = false, submitting = false, editing = false, message = null, calendars = [], pending;
   const messages = {
+    ...window.ForgeCalendarConnection.errors,
     SERVICE_UNAVAILABLE: ['请运行 npm start，并打开本地 Schedule 连接日历。', 'Run npm start and open local Schedule to connect.'],
     GOOGLE_NOT_CONFIGURED: ['请按接入说明填写本地 Google OAuth 配置，再重启服务。', 'Configure local Google OAuth and restart the service.'],
     GOOGLE_AUTH_NETWORK_FAILED: ['本地服务无法连接 Google，请保持代理开启后重新连接。', 'The local service cannot reach Google. Keep your proxy running and reconnect.'],
-    GOOGLE_NETWORK_UNAVAILABLE: ['未找到可连接 Google 的线路，请开启 UniClash / VPN 后点击“检测网络”。', 'No working route to Google was found. Start your proxy / VPN and click Detect network.'],
     GOOGLE_CLIENT_REJECTED: ['客户端凭据被拒绝，请检查本地 OAuth 配置。', 'Client credentials were rejected. Check local OAuth settings.'],
     GOOGLE_AUTH_SESSION_EXPIRED: ['授权会话已过期，请重新连接。', 'The authorization session expired. Reconnect.'],
     GOOGLE_AUTH_CODE_EXPIRED: ['授权码已过期，请重新连接。', 'The authorization code expired. Reconnect.'],
@@ -30,6 +30,7 @@
     message = { pair: messages[error.code] || ['录入未完成，任务内容已保留，请重试。', 'Could not add the task. Your draft is kept; please retry.'], error: true };
     if (['SIGN_IN_REQUIRED', 'SESSION_REQUIRED'].includes(error.code)) status.authenticated = false;
     render();
+    return message.pair;
   }
   async function api(route, payload) {
     let response, data;
@@ -48,11 +49,11 @@
     $('taskCalendarRefresh').disabled = busy || submitting;
     $('taskCalendarDisconnect').hidden = !status.authenticated;
     $('taskCalendarDisconnect').disabled = busy || submitting;
-    $('taskCalendarNetworkCheck').disabled = busy || submitting;
     const network = status.network;
     $('taskCalendarNetwork').textContent = network?.state === 'ready'
-      ? network.kind === 'proxy' ? tr('代理隧道已连接 · ', 'Proxy tunnel ready · ') + network.endpoint : tr('系统网络可访问 Google', 'Google is reachable through the system network')
-      : network?.state === 'checking' ? tr('正在检测线路…', 'Detecting network…') : network?.state === 'error' ? tr('Google 网络未连通', 'Google is unreachable') : tr('连接时自动检测网络', 'Network is detected when connecting');
+      ? tr('已收到 Google 响应', 'Google responded')
+      : network?.state === 'requesting' ? tr('正在连接 Google…', 'Connecting to Google…')
+      : tr('自动使用系统网络设置', 'Uses your system network settings');
     $('taskCalendarSelection').hidden = !status.authenticated;
     $('taskCalendarTarget').disabled = busy || submitting;
     $('taskCalendarFeedback').textContent = message ? tr(...message.pair) : status.email || '';
@@ -69,6 +70,11 @@
     busy = true; message = null; render();
     try {
       status = await api('status');
+      if (status.authorizing && !status.authenticated) {
+        message = { pair: window.ForgeCalendarConnection.waiting }; render();
+        await window.ForgeCalendarConnection.wait(api);
+        status = await api('status'); message = null;
+      }
       if (!status.configured) throw { code: 'GOOGLE_NOT_CONFIGURED' };
       if (status.authError && !status.authenticated) throw { code: status.authError };
       if (status.authenticated) {
@@ -90,20 +96,15 @@
   $('taskCalendarConnect').addEventListener('click', async () => {
     if (busy || submitting) return;
     saveDraft(); busy = true; message = null; render();
-    try { const result = await api('auth/start', { returnTo: '/planner/' }); location.assign(result.url); }
-    catch (error) { report(error); busy = false; render(); }
-  });
-  $('taskCalendarRefresh').addEventListener('click', refresh);
-  $('taskCalendarNetworkCheck').addEventListener('click', async () => {
-    if (busy || submitting) return;
-    busy = true; message = null; status.network = { state: 'checking' }; render();
     try {
-      status = await api('status');
-      const result = await api('network/check', {});
-      status.network = result.network;
-    } catch (error) { status.network = { state: 'error' }; report(error); }
+      const connected = await window.ForgeCalendarConnection.start(api, '/planner/', () => {
+        message = { pair: window.ForgeCalendarConnection.waiting }; render();
+      });
+      if (connected) { busy = false; await refresh(); }
+    } catch (error) { report(error); }
     finally { busy = false; render(); }
   });
+  $('taskCalendarRefresh').addEventListener('click', refresh);
   $('taskCalendarDisconnect').addEventListener('click', async () => {
     if (busy || submitting) return;
     busy = true; render();

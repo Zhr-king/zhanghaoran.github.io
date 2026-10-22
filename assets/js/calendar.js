@@ -6,11 +6,11 @@
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai';
   let status = {}, calendars = [], target = '', snapshot = null, working = false, feedback = null, result = null;
   const errors = {
+    ...window.ForgeCalendarConnection.errors,
     SERVICE_UNAVAILABLE: ['请运行 npm start，并打开本地工作台。', 'Run npm start and open the local workspace.'],
     GOOGLE_NOT_CONFIGURED: ['本地服务已启动，请先按接入说明填写 Google OAuth 配置。', 'The service is running. Configure Google OAuth using the setup guide.'],
     GOOGLE_AUTH_FAILED: ['Google 授权未完成，请重新连接。', 'Google authorization did not complete. Reconnect.'],
     GOOGLE_AUTH_NETWORK_FAILED: ['本地服务无法连接 Google，授权未完成。请检查本机网络或服务的代理配置后重新连接。', 'The local service cannot reach Google. Check its network or proxy settings, then reconnect.'],
-    GOOGLE_NETWORK_UNAVAILABLE: ['未找到可连接 Google 的线路，请开启本地代理 / VPN 后重新连接。', 'No working route to Google was found. Start your proxy / VPN and reconnect.'],
     GOOGLE_AUTH_INVALID_RESPONSE: ['Google 授权接口返回异常，请检查网络后重新连接。', 'Google returned an unexpected authorization response. Check the network and reconnect.'],
     GOOGLE_AUTH_SESSION_EXPIRED: ['授权会话已过期或丢失，请在当前页面重新连接，并保持服务运行。', 'The authorization session expired or was lost. Reconnect here and keep the service running.'],
     GOOGLE_CLIENT_REJECTED: ['Google 拒绝了客户端凭据，请检查本地 Client ID 和 Client Secret，更新后重启服务。', 'Google rejected the client credentials. Check your local Client ID and Client Secret, then restart the service.'],
@@ -113,6 +113,11 @@
     working = true; feedback = null; snapshot = null; render();
     try {
       status = await api('status');
+      if (status.authorizing && !status.authenticated) {
+        feedback = { pair: window.ForgeCalendarConnection.waiting }; render();
+        await window.ForgeCalendarConnection.wait(api);
+        status = await api('status'); feedback = null;
+      }
       if (!status.configured) throw { code: 'GOOGLE_NOT_CONFIGURED' };
       if (!status.authenticated && status.authError) throw { code: status.authError };
       if (status.authenticated) {
@@ -151,8 +156,13 @@
   });
   $('connectCalendar').addEventListener('click', async () => {
     if (working) return; working = true; render();
-    try { const response = await api('auth/start', {}); location.assign(response.url); }
-    catch (error) { errorMessage(error); working = false; render(); }
+    try {
+      const connected = await window.ForgeCalendarConnection.start(api, '/planner/calendar.html', () => {
+        feedback = { pair: window.ForgeCalendarConnection.waiting }; render();
+      });
+      if (connected) { working = false; await connectStatus(); }
+    } catch (error) { errorMessage(error); }
+    finally { working = false; render(); }
   });
   $('disconnectCalendar').addEventListener('click', async () => {
     if (working) return; working = true; render();

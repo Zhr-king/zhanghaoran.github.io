@@ -1,0 +1,22 @@
+/* Calendar controls use ForgeOS language and theme, independent of browser locale. */
+.forge-date-field { position: relative; width: 100%; min-width: 0; }
+.planner-page .forge-date-field > input[type="text"] { padding-right: 46px; font-variant-numeric: tabular-nums; }
+.forge-date-field input::placeholder { color: var(--text-faint); opacity: 1; }
+.forge-date-toggle { position: absolute; right: 2px; top: 2px; bottom: 2px; width: 42px; display: grid; place-items: center; border: 0; border-radius: 5px; color: var(--text); background: transparent; cursor: pointer; }
+.forge-date-toggle:hover { color: var(--sky); background: var(--line); }
+.forge-date-popup { position: fixed; z-index: 1000; width: min(320px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: auto; padding: 14px; color: var(--text); background: var(--bg-1); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 12px 36px #0005; font: 15px/1.4 Calibri, sans-serif; }
+.forge-date-popup[hidden] { display: none; }
+.forge-date-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.forge-date-popup button { border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text); cursor: pointer; min-height: 36px; font: inherit; }
+.forge-date-popup button:hover { background: var(--line); border-color: var(--line-strong); }
+.forge-date-heading button { width: 36px; font-size: 25px; }
+.forge-date-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; text-align: center; }
+.forge-date-weekday { color: var(--text-dim); padding: 4px 0; font-size: 12px; }
+.forge-date-grid .forge-date-day[aria-current="date"] { border-color: var(--sky); }
+.forge-date-grid .forge-date-day[aria-pressed="true"], .forge-date-actions .forge-date-done { background: #3276e7; color: #fff; }
+.forge-date-time { display: flex; gap: 12px; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--line); }
+.planner-page .forge-date-time label { flex: 1; min-width: 0; color: var(--text-dim); font-size: 13px; }
+.planner-page .forge-date-time input { margin-top: 5px; font: inherit; min-height: 38px; padding: 7px 10px; width: 100%; }
+.forge-date-actions { display: flex; gap: 6px; justify-content: space-between; margin-top: 12px; }
+.forge-date-actions button { padding: 7px 12px; }
+.forge-date-popup :is(button, input):focus-visible { outline: 2px solid var(--sky); outline-offset: 1px; }

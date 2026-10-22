@@ -31,26 +31,26 @@
 
 常见问题：`access_denied` 检查测试用户和授权权限；`redirect_uri_mismatch` 核对完整回调地址；API 未启用时确认启用的是普通 **Google Calendar API**，且项目与 OAuth 客户端一致。
 
-## 自动检测本地代理 / VPN
+## 跟随现有系统网络
 
-默认 `GOOGLE_PROXY_URL=auto`。启动服务、发起授权和访问 Google 时，后台会检查本机可用线路；连接结果缓存 60 秒，失败后下次操作重新检测。主页面日历连接区域显示检测结果，「检测网络」按钮可以立即重新检查。
+默认 `GOOGLE_PROXY_URL=auto`。服务启动、打开页面和开始授权都不探测 Google，也不枚举代理软件进程、扫描监听端口、调用 VPN 管理接口或修改 VPN / 系统设置。只有实际交换授权码、读取账号信息或访问日历时才发送对应请求。
 
-Windows 下读取本地 HTTP(S) 代理环境变量、已运行的 UniClash / Clash / Mihomo / v2ray / xray / sing-box / Hiddify / Shadowsocks 进程监听端口，以及启用的系统代理设置。只检查这些来源中的本机端口，不扫描局域网；不修改系统代理或 VPN 设置，不自动启动 VPN，也不执行 PAC 脚本。进程信息不可读取时，仍尝试本地代理环境变量和系统网络。
+如果显式设置了 HTTP(S) 代理环境变量，优先使用它并遵循 `NO_PROXY`；否则 Windows 通过系统代理解析器读取当前用户的代理设置，包括手动配置、绕过规则和 PAC。系统选择直连时沿用系统网络，已生效的 TUN 路由也会自然生效。不会为寻找线路在多个代理之间切换。设置读取失败会明确提示，避免静默绕过代理。
 
-候选代理必须通过 Google token、userinfo 和 Calendar 三个 HTTPS 端点的无凭据连通测试。有效 HTTP / Mixed 端口使用 HTTP CONNECT 隧道，保持 HTTPS 证书验证。如果没有可用代理，会验证系统网络；已开启 TUN 的 VPN 可以通过系统网络生效。页面显示「系统网络可访问 Google」只说明连通，不能据此判断是哪种 VPN。
+代理设置按目标域缓存 5 秒，下次业务操作会读取更新的设置；请求失败后下一次操作立即重读。使用 HTTPS CONNECT，并保持证书校验。网络错误不会自动重放授权码交换或创建日程请求，已有的去重和回读核对仍然有效。
 
 ```dotenv
-# 推荐：自动检测，无需填写端口
+# 默认：跟随既有网络设置，无需填写端口
 GOOGLE_PROXY_URL=auto
-# 可选：手动固定为自己的 HTTP / Mixed 代理端口
-# GOOGLE_PROXY_URL=http://127.0.0.1:7993
-# 可选：只使用系统网络
+# 可选：明确指定自己配置的 HTTP(S) 代理
+# GOOGLE_PROXY_URL=http://127.0.0.1:7890
+# 可选：仅使用系统路由，不读取应用层代理
 # GOOGLE_PROXY_URL=direct
 ```
 
-代理或 VPN 需由你开启。改变端口后无需修改 auto 配置，点击「检测网络」即可重新选择。未找到可用线路时会明确提示；授权前先检查网络，避免点完 Allow 才发现后台无法访问 Google。网络探测本身不会登录账号、写入日程或发送密钥。真实业务请求失败后不会自动换线路重发写入，保持已有的请求去重与回读核对流程。
+点击「连接 Google 日历」会打开系统默认浏览器授权。VS Code 集成浏览器中的 ForgeOS 保持原页面，通过本地状态接口等待结果；授权完成后自动显示已连接。回调通过一次性随机 state 和 PKCE 验证，关联原页面会话，不依赖两个浏览器共享 Cookie。系统浏览器只显示完成提示，不获取原页面的会话或 Google 密钥。若无法自动打开浏览器，退回当前页面授权。
 
-如果 Allow 后仍未连接，查看页面提示：网络问题先开启代理并检测；客户端凭据被拒绝时检查本地 OAuth 配置；会话过期时从页面重新开始授权。不要刷新旧回调 URL，授权码只能使用一次。
+连接失败时根据实际操作显示：系统代理未接受连接、请求超时、证书验证失败或 Google 凭据被拒绝等。此时重新点击连接发起新的授权，不要刷新旧的 Google 回调地址。Google 密码和同意授权仍由用户本人完成。
 
 ## 在「有什么待办？」直接添加
 
@@ -71,9 +71,8 @@ GOOGLE_PROXY_URL=auto
 
 | 本地接口 | 用途 |
 | --- | --- |
-| GET `/api/calendar/status` | 配置、连接状态和 CSRF token |
-| POST `/api/calendar/network/check` | 重新检测本地线路并验证 Google 连通性 |
-| POST `/api/calendar/auth/start` | state + PKCE 开始授权 |
+| GET `/api/calendar/status` | 配置、连接 / 授权等待状态和 CSRF token，不探测 Google |
+| POST `/api/calendar/auth/start` | state + PKCE 开始授权，可打开系统浏览器 |
 | GET `/api/calendar/oauth/callback` | 后端交换授权码 |
 | POST `/api/calendar/calendars` | 列出日历 |
 | POST `/api/calendar/read` | 分页读取指定时间段，最多 32 天 |

@@ -14,3 +14,8 @@
 .task-google-status.overlapping,.schedule-block.google-overlap .conflict-line { color:#fca5a5; }
 .schedule-block.google-overlap { border-color:rgba(239,119,126,.5); background:rgba(239,119,126,.08); }
 html[data-theme="light"] #taskCalendarFeedback.error,html[data-theme="light"] .task-google-status.overlapping { color:#b91c1c; }
+.task-submit-feedback { margin:16px 0 12px; padding:12px 14px; border:1px solid var(--line-strong); border-radius:10px; color:var(--sky); background:var(--bg-1); font-size:calc(13px * var(--text-scale)); line-height:1.6; overflow-wrap:anywhere; scroll-margin:100px 0 24px; }
+.task-submit-feedback[hidden] { display:none; }
+.task-submit-feedback.error { color:#fca5a5; border-color:rgba(239,119,126,.5); }
+#taskForm [aria-invalid="true"] { border-color:#ef777e; }
+html[data-theme="light"] .task-submit-feedback.error { color:#b91c1c; }

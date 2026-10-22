@@ -20,8 +20,6 @@ server.on('error', error => { console.error('Local service could not start: ' + 
 server.listen(port, '127.0.0.1', () => {
   console.log(`ForgeOS: ${origin}/planner/`);
   console.log(config.clientId && config.clientSecret ? 'Google OAuth configured. Connect from Schedule.' : 'Google OAuth not configured. See docs/GOOGLE_CALENDAR_MCP.md.');
-  server.checkGoogleNetwork().then(network => {
-    console.log(network.kind === 'proxy' ? 'Google API network: proxy tunnel ready (' + network.endpoint + ').' : 'Google API network: system connection ready.');
-  }).catch(() => console.warn('Google API network unavailable. Start your proxy/VPN and use Check network in Schedule.'));
+  console.log('Google requests follow the existing system proxy settings. No startup network probes.');
 });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));

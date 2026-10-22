@@ -1,56 +1,49 @@
-﻿import { execFile } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { CalendarError } from './google-mcp.mjs';
 const execute = promisify(execFile);
 
-// Read only configured proxies and listeners owned by known proxy applications.
-// This does not scan LAN hosts or change Windows / VPN settings.
-const windowsDiscovery = String.raw`
-$ErrorActionPreference = 'SilentlyContinue'
-$proxyApps = Get-Process | Where-Object { $_.ProcessName -match '^(UniClash(Core)?|clash.*|mihomo.*|v2ray.*|xray.*|sing-box|singbox|hiddify.*|Shadowsocks.*)$' }
-$proxyRows = @()
-if ($proxyApps) {
-  $proxyPids = @($proxyApps.Id)
-  $proxyRows = @(Get-NetTCPConnection -State Listen | Where-Object { $_.OwningProcess -in $proxyPids -and $_.LocalPort -ge 1024 -and $_.LocalAddress -in @('127.0.0.1','0.0.0.0','::1','::') } | ForEach-Object {
-    [pscustomobject]@{ port = $_.LocalPort; address = $_.LocalAddress; app = ($proxyApps | Where-Object Id -eq $_.OwningProcess | Select-Object -First 1).ProcessName }
-  })
-}
-$internet = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
-[pscustomobject]@{ listeners = $proxyRows; systemProxy = $(if ($internet.ProxyEnable -eq 1) { [string]$internet.ProxyServer } else { '' }) } | ConvertTo-Json -Depth 4 -Compress
+// Resolve the existing Windows configuration, including PAC and bypass rules.
+// No process enumeration, port scans, VPN control APIs or configuration writes.
+const windowsProxy = String.raw`
+$ErrorActionPreference = 'Stop'
+$destination = [Uri]$env:FORGEOS_PROXY_DESTINATION
+$proxy = [System.Net.WebRequest]::GetSystemWebProxy()
+$resolved = $proxy.GetProxy($destination)
+[pscustomobject]@{ url = $(if ($null -eq $resolved -or $resolved -eq $destination) { '' } else { $resolved.AbsoluteUri }) } | ConvertTo-Json -Compress
 `;
 
-export function localProxy(value) {
+export function proxyUrl(value) {
   try {
     const url = new URL(value.includes('://') ? value : 'http://' + value);
-    if (!['http:', 'https:'].includes(url.protocol) || !['127.0.0.1', '[::1]', 'localhost'].includes(url.hostname.toLowerCase()) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) return null;
-    return url.origin;
-  } catch { return null; }
+    if (!['http:', 'https:'].includes(url.protocol) || url.pathname !== '/' || url.search || url.hash) throw new Error();
+    return url.href;
+  } catch { throw new CalendarError('GOOGLE_PROXY_CONFIGURATION_FAILED', 502); }
 }
-export function proxyCandidates(environment = {}, windows = {}) {
-  const candidates = [], seen = new Set();
-  function add(value, source) {
-    if (typeof value !== 'string') return;
-    const url = localProxy(value.trim());
-    if (url && !seen.has(url)) { seen.add(url); candidates.push({ url, source }); }
-  }
-  for (const key of ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy']) add(environment[key], 'environment');
-  for (const row of Array.isArray(windows.listeners) ? windows.listeners : []) {
-    if (!Number.isInteger(row.port) || row.port < 1024 || row.port > 65535) continue;
-    if (!['127.0.0.1', '0.0.0.0', '::1', '::'].includes(row.address)) continue;
-    add('http://' + (row.address === '::1' ? '[::1]' : '127.0.0.1') + ':' + row.port, 'application');
-  }
-  for (const part of String(windows.systemProxy || '').split(';')) {
-    const match = part.match(/^(?:https?=)?([^=]+)$/i);
-    if (match) add(match[1], 'system');
-  }
-  return candidates.slice(0, 12);
+
+function bypasses(destination, value = '') {
+  return value.split(/[\s,]+/).filter(Boolean).some(entry => {
+    if (entry === '*') return true;
+    const [rawHost, port] = entry.toLowerCase().split(':');
+    const host = rawHost.replace(/^\*?\./, '');
+    return (!port || port === (destination.port || '443')) &&
+      (destination.hostname === host || destination.hostname.endsWith('.' + host));
+  });
 }
-export async function discoverLocalProxies({ platform = process.platform, environment = process.env, run = execute } = {}) {
-  let windows = {};
-  if (platform === 'win32') {
-    try {
-      const result = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', windowsDiscovery], { windowsHide: true, timeout: 10000, maxBuffer: 65536 });
-      windows = JSON.parse(result.stdout.replace(/^\uFEFF/, '').trim());
-    } catch { /* Environment proxies and the system network can still work. */ }
-  }
-  return proxyCandidates(environment, windows);
+
+export async function resolveSystemProxy(destination, { platform = process.platform, environment = process.env, run = execute } = {}) {
+  const url = new URL(destination);
+  const configured = environment.https_proxy || environment.HTTPS_PROXY || environment.http_proxy || environment.HTTP_PROXY || environment.all_proxy || environment.ALL_PROXY;
+  if (configured) return { url: bypasses(url, environment.no_proxy || environment.NO_PROXY) ? '' : proxyUrl(configured.trim()), source: 'environment' };
+  if (platform !== 'win32') return { url: '', source: 'system' };
+  try {
+    const { stdout } = await run('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', windowsProxy], {
+      windowsHide: true, timeout: 8000, maxBuffer: 4096,
+      // Only a public origin is passed to the OS resolver, never OAuth data.
+      env: { ...environment, FORGEOS_PROXY_DESTINATION: url.origin + '/' }
+    });
+    const result = JSON.parse(stdout.replace(/^\uFEFF/, '').trim());
+    if (typeof result.url !== 'string') throw new Error();
+    return { url: result.url ? proxyUrl(result.url) : '', source: 'system' };
+  } catch { throw new CalendarError('GOOGLE_PROXY_CONFIGURATION_FAILED', 502); }
 }

@@ -238,7 +238,7 @@ test('OAuth distinguishes network, client credentials, expired codes and profile
 
 test('missing OAuth callback session redirects safely; errors in status are allowlisted', async () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const oauth = { configured: true, async finish() { throw new Error('private-token-and-code'); } };
+  const oauth = { configured: true, begin(session) { session.oauth={state:'test-state',expires:Date.now()+60000}; return 'https://accounts.google.com/'; }, async finish(session) { delete session.oauth; throw new Error('private-token-and-code'); } };
   const server = createApp({ root, dataDirectory: os.tmpdir() }, { oauth });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const origin = 'http://127.0.0.1:' + server.address().port;
@@ -246,7 +246,9 @@ test('missing OAuth callback session redirects safely; errors in status are allo
     const missing = await fetch(origin + '/api/calendar/oauth/callback?code=private-code', { redirect: 'manual' });
     assert.equal(missing.status, 303); assert.equal(missing.headers.get('location'), '/planner/calendar.html?calendar=session-expired');
     const first = await fetch(origin + '/api/calendar/status'); const cookie = first.headers.get('set-cookie').split(';')[0];
-    const callback = await fetch(origin + '/api/calendar/oauth/callback?code=private-code', { headers: { Cookie: cookie }, redirect: 'manual' });
+    const statusBefore = await first.json();
+    await fetch(origin + '/api/calendar/auth/start', {method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-ForgeOS-CSRF':statusBefore.csrf},body:'{}'});
+    const callback = await fetch(origin + '/api/calendar/oauth/callback?state=test-state&code=private-code', { headers: { Cookie: cookie }, redirect: 'manual' });
     assert.equal(callback.headers.get('location'), '/planner/calendar.html?calendar=auth-failed');
     const status = await (await fetch(origin + '/api/calendar/status', { headers: { Cookie: cookie } })).json();
     assert.equal(status.authError, 'GOOGLE_AUTH_FAILED'); assert.equal(status.authenticated, false);
@@ -274,29 +276,57 @@ test('Google transport uses the configured HTTP CONNECT proxy with no direct fal
   } finally { await transport.close(); await new Promise(resolve => proxy.close(resolve)); }
 });
 
-test('network recheck requires same-origin CSRF and failed preflight prevents OAuth redirect', async () => {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  let checks = 0, begins = 0, unavailable = false;
-  const network = { mode: 'auto', state: 'ready', kind: 'proxy', endpoint: '127.0.0.1:7993', source: 'application' };
-  const transport = { status: () => network, async check() { checks++; if (unavailable) throw new CalendarError('GOOGLE_NETWORK_UNAVAILABLE', 502); return network; }, async close() {} };
-  const oauth = { configured: true, begin(session) { begins++; session.oauth = {}; return 'https://accounts.google.com/'; } };
-  const server = createApp({ root, dataDirectory: os.tmpdir() }, { transport, oauth });
-  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  const origin = 'http://127.0.0.1:' + server.address().port;
+test('authorization starts without network access; external callback uses one-use state across browser sessions', async () => {
+  const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+  let requests=0, opened=0, launchUrl;
+  const oauth=new GoogleOAuth({clientId:'test-id',clientSecret:'test-secret',redirectUri:'http://127.0.0.1/callback'},async url=>{
+    requests++;
+    return Response.json(String(url).includes('userinfo') ? {sub:'test-user',email:'test@example.test'} : {access_token:'test-token'});
+  });
+  const transport={status:()=>({mode:'auto',state:'error',error:'GOOGLE_REQUEST_TIMEOUT'}),async close(){}};
+  const server=createApp({root,dataDirectory:os.tmpdir()},{oauth,transport,openBrowser:async url=>{opened++;launchUrl=url;return true;}});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const origin='http://127.0.0.1:'+server.address().port;
   try {
-    const first = await fetch(origin + '/api/calendar/status'), status = await first.json();
-    const cookie = first.headers.get('set-cookie').split(';')[0];
-    assert.equal(status.network.mode, 'auto');
-    const headers = { Cookie: cookie, Origin: origin, 'Content-Type': 'application/json', 'X-ForgeOS-CSRF': status.csrf };
-    const denied = await fetch(origin + '/api/calendar/network/check', { method: 'POST', headers: { ...headers, Origin: 'https://other.example' }, body: '{}' });
-    assert.equal(denied.status, 403); assert.equal(checks, 0);
-    const checked = await fetch(origin + '/api/calendar/network/check', { method: 'POST', headers, body: '{}' });
-    assert.equal(checked.status, 200); assert.equal((await checked.json()).network.endpoint, '127.0.0.1:7993');
-    unavailable = true;
-    const failed = await fetch(origin + '/api/calendar/auth/start', { method: 'POST', headers, body: '{}' });
-    assert.equal(failed.status, 502); assert.equal((await failed.json()).error, 'GOOGLE_NETWORK_UNAVAILABLE'); assert.equal(begins, 0);
-    unavailable = false;
-    const started = await fetch(origin + '/api/calendar/auth/start', { method: 'POST', headers, body: '{"returnTo":"/planner/"}' });
-    assert.equal(started.status, 200); assert.equal(begins, 1);
-  } finally { await new Promise(resolve => server.close(resolve)); }
+    async function browser() {
+      const res=await fetch(origin+'/api/calendar/status'), status=await res.json();
+      const cookie=res.headers.get('set-cookie').split(';')[0];
+      return {cookie,headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-ForgeOS-CSRF':status.csrf}};
+    }
+    const first=await browser(), other=await browser();
+    const denied=await fetch(origin+'/api/calendar/auth/start',{method:'POST',headers:{...first.headers,Origin:'https://other.example'},body:'{"external":true}'});
+    assert.equal(denied.status,403); assert.equal(opened,0);
+    const start=await fetch(origin+'/api/calendar/auth/start',{method:'POST',headers:first.headers,body:'{"external":true,"returnTo":"/planner/","language":"en"}'});
+    assert.equal(start.status,200); assert.equal((await start.json()).opened,true);
+    assert.equal(opened,1); assert.equal(requests,0,'Network failure must not block starting authorization');
+    const state=new URL(launchUrl).searchParams.get('state');
+    const wrong=await fetch(origin+'/api/calendar/oauth/callback?state=wrong&code=test',{redirect:'manual',headers:{Cookie:first.cookie}});
+    assert.equal(wrong.status,303); assert.equal(requests,0);
+    const pending=await (await fetch(origin+'/api/calendar/status',{headers:{Cookie:first.cookie}})).json();
+    assert.equal(pending.authorizing,true,'Unsolicited callback does not cancel pending authorization');
+    const callback=await fetch(origin+'/api/calendar/oauth/callback?state='+state+'&code=test',{redirect:'manual',headers:{Cookie:other.cookie}});
+    assert.equal(callback.status,200);
+    const englishPage = await callback.text();
+    assert.match(englishPage, /<html lang="en">/);
+    assert.match(englishPage, /Google Calendar connected/);
+    assert.doesNotMatch(englishPage, /[\u3400-\u9fff]/);
+    assert.equal(callback.headers.get('set-cookie'),null,'External browser does not receive initiating session cookie');
+    assert.equal(requests,2,'Only token exchange and account lookup');
+    const linked=await (await fetch(origin+'/api/calendar/status',{headers:{Cookie:first.cookie}})).json();
+    assert.equal(linked.authenticated,true); assert.equal(linked.authorizing,false);
+    const unlinked=await (await fetch(origin+'/api/calendar/status',{headers:{Cookie:other.cookie}})).json();
+    assert.equal(unlinked.authenticated,false,'Only the initiating browser gets the account');
+    const replay=await fetch(origin+'/api/calendar/oauth/callback?state='+state+'&code=test',{redirect:'manual'});
+    assert.equal(replay.status,303); assert.equal(requests,2);
+    assert(!JSON.stringify(linked).includes('test-token'));
+  } finally {await new Promise(resolve=>server.close(resolve));}
+});
+
+test('a temporary token refresh network failure retains the refresh credential', async()=>{
+  let fail=true;
+  const oauth=new GoogleOAuth({clientId:'id',clientSecret:'secret'},async()=>{if(fail)throw new CalendarError('GOOGLE_REQUEST_TIMEOUT',502);return Response.json({access_token:'new-token'});});
+  const session={tokens:{access_token:'expired',refresh_token:'keep-me',expiresAt:0}};
+  await assert.rejects(oauth.accessToken(session),{code:'GOOGLE_REQUEST_TIMEOUT'});
+  assert.equal(session.tokens.refresh_token,'keep-me');
+  fail=false; assert.equal(await oauth.accessToken(session),'new-token');
 });

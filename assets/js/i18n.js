@@ -31,6 +31,8 @@
     const bindings = [
       ['data-i18n-en', null],
       ['data-i18n-label-en', 'aria-label'],
+      ['data-i18n-placeholder-en', 'placeholder'],
+      ['data-i18n-title-en', 'title'],
       ['data-i18n-content-en', 'content'],
       ['data-toast-en', 'data-toast']
     ];

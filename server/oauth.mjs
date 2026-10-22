@@ -1,5 +1,6 @@
 import { randomBytes, createHash } from 'node:crypto';
 import { CalendarError } from './google-mcp.mjs';
+import { NETWORK_ERRORS } from './google-transport.mjs';
 
 const random = () => randomBytes(32).toString('base64url');
 export const SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.calendarlist.readonly', 'https://www.googleapis.com/auth/calendar.events'];
@@ -32,7 +33,7 @@ export class GoogleOAuth {
   async googleResponse(url, options) {
     let response;
     try { response = await this.request(url, { ...options, redirect: 'error' }); }
-    catch { throw new CalendarError('GOOGLE_AUTH_NETWORK_FAILED', 502); }
+    catch (error) { if (NETWORK_ERRORS.has(error.code)) throw error; throw new CalendarError('GOOGLE_AUTH_NETWORK_FAILED', 502); }
     try {
       const data = await response.json();
       if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error();
@@ -55,7 +56,7 @@ export class GoogleOAuth {
     if (!session.tokens.refresh_token) { delete session.tokens; throw new CalendarError('SIGN_IN_REQUIRED', 401); }
     if (!session.refreshing) session.refreshing = this.token({ grant_type: 'refresh_token', refresh_token: session.tokens.refresh_token })
       .then(next => { session.tokens = { ...session.tokens, ...next }; return session.tokens.access_token; })
-      .catch(error => { delete session.tokens; throw error; }).finally(() => { delete session.refreshing; });
+      .catch(error => { if (['GOOGLE_AUTH_CODE_EXPIRED', 'GOOGLE_CLIENT_REJECTED'].includes(error.code)) delete session.tokens; throw error; }).finally(() => { delete session.refreshing; });
     return session.refreshing;
   }
 }
