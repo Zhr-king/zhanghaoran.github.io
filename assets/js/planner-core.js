@@ -8,23 +8,30 @@
   const overlaps = (a, b) => a.start < b.end && b.start < a.end;
 
   function parse(text, now = new Date()) {
-    const durationMatch = text.match(/(\d+(?:\.\d+)?)\s*(小时|分钟|hours?|hrs?|minutes?|mins?)/i);
-    const duration = durationMatch ? Math.round(Number(durationMatch[1]) * (/小时|hours?|hrs?/i.test(durationMatch[2]) ? 60 : 1)) : 60;
-    let date = dateKey(now);
+    const durationMatches = [...text.matchAll(/(?<![\d.+-])(\d+(?:\.\d+)?)\s*(小时|分钟|hours?|hrs?|minutes?|mins?)/gi)];
+    const durationMatch = durationMatches.length === 1 ? durationMatches[0] : null;
+    const duration = durationMatch ? Math.round(Number(durationMatch[1]) * (/小时|hours?|hrs?/i.test(durationMatch[2]) ? 60 : 1)) : null;
+    // Unknown details stay empty so the user can supply them before submission.
+    let date = '';
     const explicitDate = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
     if (explicitDate) date = explicitDate[1];
     else if (/后天/.test(text)) { const d = new Date(now); d.setDate(d.getDate() + 2); date = dateKey(d); }
     else if (/明天|tomorrow/i.test(text)) { const d = new Date(now); d.setDate(d.getDate() + 1); date = dateKey(d); }
+    else if (/今天|\btoday\b/i.test(text)) date = dateKey(now);
+    if (date && dateKey(new Date(date + 'T12:00')) !== date) date = '';
     // Avoid treating a duration such as “2 hours” as a deadline.
-    const timeMatch = text.match(/(?:[01]?\d|2[0-3]):[0-5]\d/);
-    const zhTime = text.match(/(上午|下午|晚上)?\s*(\d{1,2})\s*点(?:(\d{1,2})分?)?/);
-    let time = timeMatch ? timeMatch[0].padStart(5, '0') : '18:00';
-    if (!timeMatch && zhTime) {
+    const times = [...text.matchAll(/(?<![\d:])(?:[01]?\d|2[0-3]):[0-5]\d(?![\d:])/g)];
+    const zhTimes = [...text.matchAll(/(?<!\d)(上午|下午|晚上)?\s*(\d{1,2})\s*点(?:(\d{1,2})分?)?/g)];
+    // A range or multiple times is ambiguous; do not mistake its start for a deadline.
+    const timeMatch = times.length + zhTimes.length === 1 ? times[0] : null;
+    const zhTime = times.length + zhTimes.length === 1 ? zhTimes[0] : null;
+    let time = timeMatch ? timeMatch[0].padStart(5, '0') : '';
+    if (zhTime) {
       let hour = Number(zhTime[2]);
       if (/下午|晚上/.test(zhTime[1]) && hour < 12) hour += 12;
       if (hour < 24 && Number(zhTime[3] || 0) < 60) time = clock(hour * 60 + Number(zhTime[3] || 0));
     }
-    return { title: text.trim(), duration, deadline: `${date}T${time}`, priority: /紧急|高优先|urgent|high priority/i.test(text) ? 'high' : 'normal' };
+    return { title: text.trim(), duration, deadline: date && time ? `${date}T${time}` : '', priority: /紧急|高优先|urgent|high priority/i.test(text) ? 'high' : 'normal' };
   }
 
   function plan(tasks, events, preferences, now = new Date(), reserved = []) {

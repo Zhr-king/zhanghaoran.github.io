@@ -1,6 +1,12 @@
 # zhanghaoran.github.io
 ForgeOS project
 
+Windows 本地使用：在项目文件夹双击 [ForgeOS.vbs](ForgeOS.vbs)，会在后台启动本地服务，并在默认浏览器打开 Schedule，无需打开 VS Code 或终端。重复双击会复用已经运行的服务。可以右键这个文件创建桌面快捷方式；保留项目文件的位置。
+
+关闭浏览器后服务继续在后台运行；双击 [Stop ForgeOS.vbs](<Stop ForgeOS.vbs>) 可关闭由此入口启动的服务。重新启动后需重新连接 Google 日历。普通浏览器和 VS Code 集成浏览器的登录、本地待办分别保存；Google 中已经同步的日程仍然保留。此入口沿用现有系统网络设置。
+
+首次准备仍需安装 Node.js 22.19 或更新版本、运行一次 `npm ci`，并按 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md) 配置 Google OAuth。启动日志在被 Git 忽略的 `server/.data/launcher/<端口>/` 中。若服务来自其他启动方式，关闭入口不会结束那个进程。
+
 首次访问默认显示英文。导航栏的 `CN / ENG` 按钮显示当前语言，点击后切换；浏览器会记住选择。语言和主题分别保存，原有动画与特效保持不变。
 
 时间规划、学习知识库、智能体账号页各有一张首次使用指引，支持开始使用、跳过、关闭与 Esc。显示后即以独立的 `forgeos:onboarding:<模块>` 存储项记住状态，刷新或再次进入不会重复弹出，也不会修改任务或笔记。指引跟随语言和主题，不使用持续动画或背景模糊；本机存储不可用时尝试会话存储。清除网站数据或更换浏览器后会再次显示。运行 `node tests/onboarding-browser.cjs` 检查独立记忆、关闭操作、响应式布局与存储降级。
@@ -23,9 +29,11 @@ ForgeOS project
 
 动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。该本地原型尚未连接 AI 智能体；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
 
-Schedule 主页面 `/planner/` 的「有什么待办？」已接入 Google 日历：在同一页面授权、选择日历，填写开始时间和预计时长，点击「添加任务并同步日历」即可同时加入待办和真实日历。默认勾选同步，取消可仅保存本地；失败保留草稿，重试避免重复创建。旧 `/planner/calendar.html` 保留为独立入口。配置 Google OAuth 后通过本地服务连接标准 Google Calendar API，个人 Google 账号即可使用，无需 Workspace 订阅或 MCP 预览资格。录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。运行 `npm ci`、`npm start`，打开 `http://127.0.0.1:8787/planner/`；首次配置见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。当前测试使用模拟日历，真实 Google 授权尚待配置验证。
+Schedule 主页面 `/planner/` 的「有什么待办？」已接入 Google 日历：在同一页面授权、选择日历，填写开始时间和预计时长，点击「添加任务并同步日历」即可同时加入待办和真实日历。默认勾选同步，取消可仅保存本地；失败保留草稿，重试避免重复创建。旧 `/planner/calendar.html` 保留为独立入口。配置 Google OAuth 后通过本地服务连接标准 Google Calendar API，个人 Google 账号即可使用，无需 Workspace 订阅或 MCP 预览资格。录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。双击 `ForgeOS.vbs`，或运行 `npm start`，打开 `http://127.0.0.1:8787/planner/`；首次配置见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。自动化测试使用模拟日历；真实账号的授权、录入与读回已于 2026-10-22 验证。
 
 本地运行 `python -m http.server 5500 --bind 127.0.0.1`，打开 `http://127.0.0.1:5500/planner/` 即可体验。也可使用 VS Code 的“预览网页”任务。
+
+Schedule 的 Extract task details 仅填写本地规则明确识别到的信息，不再为缺失的时长、日期和时间自动补默认值。任务名称、预计分钟、截止日期和时间必填；同步 Google 日历还需要开始日期和时间。缺失项目会一次列出，可点击跳到对应字段，补齐后再提交；地点和备注选填。Google 确认创建成功后，页面显示一张可关闭的成功卡片，包含任务名称、实际起止时间和日程链接；发生重叠时提示新日程已标红。提交中、失败或仅保存本地任务时不会显示 Google 成功卡片。
 
 页面设计样板位于 `/planner/template.html`，采用深蓝、冰蓝和青色的工作台布局，支持中英文、明暗主题、日期切换与示例任务勾选。样板使用独立的展示数据，不读取或修改真实规划任务，也不保存示例操作。入口位于规划页标题旁的辅助操作区，与“试用示例任务”放在一起。
 

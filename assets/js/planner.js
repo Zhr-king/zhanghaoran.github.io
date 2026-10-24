@@ -10,7 +10,13 @@
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && core.dateKey(new Date(value + 'T12:00')) === value;
   const validDeadline = value => typeof value === 'string' && value.length === 16 && validDate(value.slice(0, 10)) && validTime(value.slice(11)) && value[10] === 'T';
   let state = defaults(), proposal = null, editing = null, selectedDay = 0;
-  let loadFailed = false, savingTask = false, taskMessage = null;
+  let loadFailed = false, savingTask = false, taskMessage = null, calendarSuccess = null;
+  const requiredDetails = [
+    { id: 'taskTitle', pair: ['任务名称', 'Task name'] },
+    { id: 'taskDuration', pair: ['预计分钟', 'Minutes'] },
+    { id: 'taskDeadline', pair: ['截止日期和时间', 'Deadline date and time'] },
+    { id: 'taskCalendarStart', pair: ['日程开始日期和时间', 'Calendar start date and time'] }
+  ];
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) {
@@ -33,11 +39,29 @@
     button.type = 'button'; button.addEventListener('click', handler); return button;
   }
   function notify(zh, en, error = false) { $('feedback').textContent = tr(zh, en); $('feedback').classList.toggle('error', error); }
+  const taskInput = id => $(id + 'Display') || $(id);
+  function markTaskField(id) {
+    const input = taskInput(id);
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), 'taskSubmitFeedback'].filter(Boolean).join(' '));
+  }
   function renderTaskFeedback() {
     const feedback = $('taskSubmitFeedback');
     feedback.hidden = !taskMessage;
     feedback.textContent = taskMessage ? tr(...taskMessage.pair) : '';
     feedback.classList.toggle('error', !!taskMessage?.error);
+    if (taskMessage?.missing) {
+      const list = node('ul');
+      for (const field of taskMessage.missing) {
+        const item = node('li');
+        item.append(action(tr(...field.pair), () => {
+          taskInput(field.id).focus({ preventScroll: true });
+          taskInput(field.id).scrollIntoView({ block: 'center' });
+        }));
+        list.append(item);
+      }
+      feedback.append(list);
+    }
   }
   function clearTaskFeedback() {
     taskMessage = null;
@@ -52,13 +76,42 @@
   function notifyTask(zh, en, error = false, fieldId) {
     taskMessage = { pair: [zh, en], error };
     notify(zh, en, error); renderTaskFeedback();
-    if (fieldId) {
-      const input = $(fieldId + 'Display') || $(fieldId);
-      input.setAttribute('aria-invalid', 'true');
-      input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), 'taskSubmitFeedback'].filter(Boolean).join(' '));
-    }
+    if (fieldId) markTaskField(fieldId);
     if (error) $('taskSubmitFeedback').scrollIntoView({ block: 'nearest' });
   }
+  function requireTaskDetails(scroll = true) {
+    const missing = requiredDetails.filter(field =>
+      (field.id !== 'taskCalendarStart' || (!editing && $('taskCalendarSync').checked)) && !$(field.id).value.trim());
+    clearTaskFeedback();
+    if (!missing.length) return false;
+    const pair = ['请补全以下必填信息，填写完整后才能添加：', 'Complete these required details before adding your task:'];
+    taskMessage = { pair, error: true, missing };
+    missing.forEach(field => markTaskField(field.id));
+    notify(...pair, true); renderTaskFeedback();
+    if (scroll) $('taskSubmitFeedback').scrollIntoView({ block: 'nearest' });
+    return true;
+  }
+  function renderCalendarSuccess() {
+    const panel = $('calendarSuccess'); panel.hidden = !calendarSuccess;
+    if (!calendarSuccess) return;
+    const { event, overlap, localSaved } = calendarSuccess;
+    $('calendarSuccessTitle').textContent = event.title;
+    const date = value => new Date(value).toLocaleString(locale(), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+    $('calendarSuccessTime').textContent = `${date(event.start)} – ${date(event.end)} · ${tr('本地时间', 'local time')}`;
+    const warnings = [];
+    if (overlap) warnings.push(tr('与已有日程重叠，新日程已标红。', 'Overlaps an existing event; the new event is marked red.'));
+    if (!localSaved) warnings.push(tr('Google 已保存，但浏览器未能保存本地待办。', 'Google saved the event, but browser storage could not save the local task.'));
+    $('calendarSuccessWarning').hidden = !warnings.length;
+    $('calendarSuccessWarning').textContent = warnings.join(' ');
+    const link = $('calendarSuccessLink'); link.hidden = true; link.removeAttribute('href');
+    try {
+      const url = new URL(event.htmlLink);
+      if (url.protocol === 'https:' && ['calendar.google.com', 'www.google.com'].includes(url.hostname)) {
+        link.href = url.href; link.hidden = false;
+      }
+    } catch {}
+  }
+  $('calendarSuccessClose').addEventListener('click', () => { calendarSuccess = null; renderCalendarSuccess(); });
   function persist() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
     catch (error) { notify('浏览器无法保存数据，本次操作仅在当前页面有效。', 'Browser storage is unavailable. Changes will last only while this page stays open.', true); return false; }
@@ -74,8 +127,7 @@
   function activeSlots() { return [...state.schedule.filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done && !task.googleEvent)), ...googleSlots().filter(slot => state.tasks.some(task => task.id === slot.taskId && !task.done))]; }
   function resetEditor() {
     editing = null; $('taskForm').reset(); $('cancelEdit').hidden = true; clearTaskFeedback();
-    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
-    $('taskDeadline').value = `${core.dateKey(tomorrow)}T18:00`;
+    $('taskDeadline').value = ''; $('taskDuration').value = '';
     $('saveTask').textContent = tr('添加任务 ＋', 'Add task +');
     calendar.setEditing(false);
   }
@@ -202,7 +254,7 @@
     $('saveTask').textContent = editing ? tr('保存修改', 'Save changes') : tr('添加任务 ＋', 'Add task +');
     $('naturalTask').placeholder = tr('明天下午5点前完成项目报告，需要2小时，高优先级', 'Finish the project report tomorrow by 17:00, 2 hours, high priority');
     renderSchedule(); renderProposal(); renderTasks(); renderEvents();
-    calendar.render(); renderTaskFeedback();
+    calendar.render(); renderTaskFeedback(); renderCalendarSuccess();
   }
   function generate(announce = true) {
     proposal = core.plan(state.tasks.filter(task => !task.googleEvent), state.events, state.preferences, new Date(), googleSlots());
@@ -214,10 +266,10 @@
     if (savingTask) return;
     if (!$('naturalTask').value.trim()) return;
     const parsed = core.parse($('naturalTask').value);
-    resetEditor(); $('taskTitle').value = parsed.title; $('taskDuration').value = parsed.duration;
+    resetEditor(); $('taskTitle').value = parsed.title; $('taskDuration').value = parsed.duration ?? '';
     $('taskDeadline').value = parsed.deadline; $('taskPriority').value = parsed.priority;
-    notify('已按本地规则填写。未识别的时长默认 60 分钟，日期默认今天、时间默认 18:00，请核对。', 'Filled using local rules. Missing details default to 60 minutes, today, and 18:00. Please review all fields.');
-    $('taskTitle').focus();
+    calendarSuccess = null; renderCalendarSuccess();
+    if (!requireTaskDetails()) notifyTask('已填写识别到的信息，请核对后添加。', 'Recognized details are filled in. Review them before adding.');
   });
   // Browser validation runs before submit. Keep these errors beside the button,
   // in the page's language, as well as marking the field that needs attention.
@@ -225,6 +277,8 @@
     event.preventDefault();
     const first = Array.from($('taskForm').elements).find(input => input.willValidate && !input.validity.valid);
     if (event.target !== first) return;
+    calendarSuccess = null; renderCalendarSuccess();
+    if (requireTaskDetails()) return;
     clearTaskFeedback();
     const id = first.id.replace(/Display$/, '');
     const pair = {
@@ -236,11 +290,17 @@
     notifyTask(...pair, true, id);
     first.focus({ preventScroll: true });
   }, true);
-  $('taskForm').addEventListener('input', () => { if (taskMessage?.error) clearTaskFeedback(); });
+  function updateTaskRequirements() {
+    if (taskMessage?.missing) requireTaskDetails(false);
+    else if (taskMessage?.error) clearTaskFeedback();
+  }
+  $('taskForm').addEventListener('input', updateTaskRequirements);
+  $('taskForm').addEventListener('change', updateTaskRequirements);
   $('taskForm').addEventListener('submit', async event => {
     event.preventDefault();
     if (savingTask) return;
-    clearTaskFeedback();
+    calendarSuccess = null; renderCalendarSuccess();
+    if (requireTaskDetails()) return;
     const title = $('taskTitle').value.trim(), duration = Number($('taskDuration').value), deadline = $('taskDeadline').value;
     if (!title) return notifyTask('请填写任务名称。', 'Enter a task name.', true, 'taskTitle');
     if (!Number.isInteger(duration) || duration < 15 || duration > 720) {
@@ -276,6 +336,8 @@
         if (!stored) notifyTask('已添加到 Google 日历，但浏览器无法保存本地待办。', 'Added to Google Calendar, but browser storage could not save the local task.', true);
         else notifyTask(result.overlap ? `任务已添加到 Google 日历并标红。重叠日程：${conflicts}` : '任务已添加到待办和 Google 日历。',
           result.overlap ? `Added to Google Calendar in red. Overlaps: ${conflicts}` : 'Task added to your task list and Google Calendar.');
+        calendarSuccess = { event: result.event, overlap: result.overlap, localSaved: stored };
+        renderCalendarSuccess();
       } catch (error) {
         const pair = calendar.report(error);
         notifyTask(...pair, true);

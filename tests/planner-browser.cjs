@@ -57,7 +57,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     const base = `http://127.0.0.1:${server.address().port}`;
     const ready = async () => {
       for (let i = 0; i < 100; i++) {
-        try { if (await evaluate('!window.__oldPage && document.readyState === "complete" && Boolean(window.ForgePlanner) && document.getElementById("taskDeadline").value !== ""')) return; } catch (error) { if (!/context|navigat/i.test(error.message)) throw error; }
+        try { if (await evaluate('!window.__oldPage && document.readyState === "complete" && Boolean(window.ForgePlanner) && Boolean(document.getElementById("taskDeadlineDisplay"))')) return; } catch (error) { if (!/context|navigat/i.test(error.message)) throw error; }
         await sleep(100);
       }
       throw new Error('Planner did not become ready');

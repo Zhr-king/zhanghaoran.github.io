@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="../assets/css/planner.css?v=20261013b">
   <link rel="stylesheet" href="../assets/css/agent.css?v=20261019">
   <link rel="stylesheet" href="../assets/css/onboarding.css?v=20261013b">
-  <link rel="stylesheet" href="../assets/css/planner-calendar.css?v=20261022b">
+  <link rel="stylesheet" href="../assets/css/planner-calendar.css?v=20261024">
   <script>try { if (localStorage.getItem('forgeos:theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
   <link rel="stylesheet" href="../assets/css/date-inputs.css?v=20261022">
 </head>
@@ -81,15 +81,16 @@
           <form id="captureForm">
             <label for="naturalTask" data-i18n-en="Describe your task">用一句话描述任务</label>
             <textarea id="naturalTask" rows="3" maxlength="300" required placeholder="明天下午5点前完成项目报告，需要2小时，高优先级" data-i18n-placeholder-en="Finish the project report tomorrow by 17:00, 2 hours, high priority"></textarea>
-            <p class="field-help" data-i18n-en="Supports today, tomorrow, YYYY-MM-DD, HH:mm, duration, and high priority. Other details can be set below.">支持今天、明天、具体日期、几点、时长和高优先级；其他信息可在下方填写。</p>
+            <p class="field-help" data-i18n-en="Recognizes dates, times and durations using local rules. Unrecognized details stay empty; complete them below before adding.">按本地规则识别日期、时间和时长；未识别的信息会留空，请在下方补全后添加。</p>
             <button class="secondary-btn full-width" type="submit" data-i18n-en="Extract task details ↓">识别任务信息 ↓</button>
           </form>
           <form id="taskForm" class="task-form">
             <fieldset id="taskFields">
             <div class="form-divider"><span id="editorHeading" data-i18n-en="REVIEW & ADD">核对并添加</span></div>
+            <p class="field-help" data-i18n-en="Task name, minutes and deadline are required. Calendar sync also requires a start date and time.">任务名称、预计分钟和截止时间必填；同步日历还需填写日程开始日期和时间。</p>
             <label for="taskTitle" data-i18n-en="Task name">任务名称</label><input id="taskTitle" maxlength="300" required>
             <div class="form-row">
-              <div><label for="taskDuration" data-i18n-en="Minutes">预计分钟</label><input id="taskDuration" type="number" min="15" max="720" step="1" value="60" required></div>
+              <div><label for="taskDuration" data-i18n-en="Minutes">预计分钟</label><input id="taskDuration" type="number" min="15" max="720" step="1" required></div>
               <div><label for="taskPriority" data-i18n-en="Priority">优先级</label><select id="taskPriority"><option value="normal" data-i18n-en="Normal">普通</option><option value="high" data-i18n-en="High">高</option></select></div>
             </div>
             <label for="taskDeadline" data-i18n-en="Deadline (local time)">截止时间（本地时间）</label><input id="taskDeadline" type="datetime-local" required>
@@ -97,10 +98,10 @@
             <div id="taskCalendarFields">
               <label for="taskCalendarStart" data-i18n-en="Calendar start (local time)">日程开始时间（本地时间）</label><input id="taskCalendarStart" type="datetime-local" required>
               <p class="field-help" data-i18n-en="End time = start + estimated minutes. Overlaps are allowed and the new event is marked red.">结束时间 = 开始时间 + 预计分钟。时间重叠仍会录入，新日程标红。</p>
-              <label for="taskCalendarLocation" data-i18n-en="Location / meeting link">地点 / 会议链接</label><input id="taskCalendarLocation" maxlength="1000">
-              <label for="taskCalendarDescription" data-i18n-en="Notes">备注</label><textarea id="taskCalendarDescription" rows="2" maxlength="8000"></textarea>
+              <label for="taskCalendarLocation" data-i18n-en="Location / meeting link (optional)">地点 / 会议链接（选填）</label><input id="taskCalendarLocation" maxlength="1000">
+              <label for="taskCalendarDescription" data-i18n-en="Notes (optional)">备注（选填）</label><textarea id="taskCalendarDescription" rows="2" maxlength="8000"></textarea>
             </div>
-            <p id="taskSubmitFeedback" class="task-submit-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></p>
+            <div id="taskSubmitFeedback" class="task-submit-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
             <button class="primary-btn full-width" id="saveTask" type="submit" data-i18n-en="Add task +">添加任务 ＋</button>
             <button class="text-btn" id="cancelEdit" type="button" hidden data-i18n-en="Cancel editing">取消编辑</button>
             </fieldset>
@@ -154,12 +155,24 @@
     </div>
     <footer class="planner-footer"><span>FORGEOS / <span data-i18n-en="Schedule">动态时间规划</span></span><span data-i18n-en="Next: agent-assisted planning · knowledge links · project workflows">后续接入：智能体辅助规划 · 知识关联 · 项目工作流</span></footer>
   </main>
+  <section id="calendarSuccess" class="calendar-success" aria-labelledby="calendarSuccessHeading" hidden>
+    <div role="status" aria-live="polite" aria-atomic="true">
+      <strong id="calendarSuccessHeading" data-i18n-en="Added to Google Calendar">已成功添加到 Google 日历</strong>
+      <p id="calendarSuccessTitle" class="calendar-success-title"></p>
+      <p id="calendarSuccessTime"></p>
+      <p id="calendarSuccessWarning" class="calendar-success-warning" hidden></p>
+    </div>
+    <div class="calendar-success-actions">
+      <a id="calendarSuccessLink" class="text-btn" target="_blank" rel="noopener noreferrer" data-i18n-en="View in Google Calendar ↗">查看 Google 日程 ↗</a>
+      <button id="calendarSuccessClose" class="text-btn" type="button" data-i18n-en="Close">关闭</button>
+    </div>
+  </section>
   <script src="../assets/js/i18n.js?v=20261022"></script>
   <script src="../assets/js/ui.js?v=20261011c"></script>
-  <script src="../assets/js/planner-core.js?v=20261020"></script>
+  <script src="../assets/js/planner-core.js?v=20261024"></script>
   <script src="../assets/js/calendar-connection.js?v=20261022b"></script>
   <script src="../assets/js/planner-calendar.js?v=20261022b"></script>
-  <script src="../assets/js/planner.js?v=20261022b"></script>
+  <script src="../assets/js/planner.js?v=20261024"></script>
   <script src="../assets/js/agent-settings.js?v=20261019"></script>
   <script src="../assets/js/onboarding.js?v=20261013b"></script>
   <script src="../assets/js/date-inputs.js?v=20261022"></script>

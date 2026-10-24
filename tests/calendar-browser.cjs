@@ -168,6 +168,34 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await evaluate('document.getElementById("taskCalendarNetworkCheck")'),null,'No network scan button');
     assert.match(await evaluate('document.getElementById("taskCalendarNetwork").textContent'),/system network|系统网络/);
     await evaluate('document.querySelector("[data-guide-action=skip]")?.click(); document.getElementById("taskCalendarStartDisplay").scrollIntoView({block:"center"})');
+    // Empty details and unrecognized natural language must never produce guessed
+    // dates/durations or reach the Calendar API. The list updates as fields are filled.
+    assert.equal(await evaluate('document.getElementById("taskDuration").value'),'');
+    assert.equal(await evaluate('document.getElementById("taskDeadline").value'),'');
+    await pointerClick('saveTask');
+    assert.equal(await evaluate('document.querySelectorAll("#taskSubmitFeedback li").length'),4);
+    assert.equal(writeCount,2);
+    await evaluate('document.getElementById("naturalTask").value="Write a report";document.getElementById("captureForm").requestSubmit()');
+    assert.equal(await evaluate('document.getElementById("taskTitle").value'),'Write a report');
+    for(const id of ['taskDuration','taskDeadline','taskCalendarStart'])assert.equal(await evaluate('document.getElementById('+JSON.stringify(id)+').value'),'');
+    assert.equal(await evaluate('document.querySelectorAll("#taskSubmitFeedback li").length'),3);
+    await pointerClick('saveTask');
+    assert.equal(writeCount,2,'Missing details must block Google writes');
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),true);
+    await evaluate('document.querySelector("#taskSubmitFeedback button").click()');
+    assert.equal(await evaluate('document.activeElement.id'),'taskDuration','Missing-field links focus the correct control');
+    await evaluate('document.getElementById("taskDuration").value="120";document.getElementById("taskDuration").dispatchEvent(new Event("input",{bubbles:true}))');
+    assert.equal(await evaluate('document.querySelectorAll("#taskSubmitFeedback li").length'),2);
+    await evaluate('document.getElementById("taskDeadline").value='+JSON.stringify(key(tomorrow)+'T17:00')+';document.getElementById("taskDeadline").dispatchEvent(new Event("input",{bubbles:true}))');
+    assert.equal(await evaluate('document.querySelectorAll("#taskSubmitFeedback li").length'),1);
+    await click('languageToggle');
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/日程开始日期和时间/);
+    await click('languageToggle');
+    assert.doesNotMatch(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/[\u3400-\u9fff]/);
+    await evaluate('document.getElementById("taskCalendarStart").value='+JSON.stringify(key(tomorrow)+'T14:00')+';document.getElementById("taskCalendarStart").dispatchEvent(new Event("input",{bubbles:true}))');
+    assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").hidden'),true);
+    assert.equal(writeCount,2,'Completing the details still requires a submit action');
+    await evaluate('document.getElementById("taskForm").reset()');
     // Browser-native dates may use Chinese even when the page is English.
     // Our visible fields and popup must follow the page and preserve ISO values.
     assert.equal(await evaluate('document.getElementById("taskCalendarStartDisplay").placeholder'),'YYYY-MM-DD HH:mm');
@@ -226,7 +254,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     // Native validation can prevent submit entirely; it still needs an inline message.
     await evaluate('document.getElementById("taskCalendarStart").value=""');
     await pointerClick('saveTask');
-    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Choose a calendar start date and time/);
+    assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Calendar start date and time/);
     assert.equal(writeCount,2);
     await evaluate('document.getElementById("taskCalendarStartDisplay").focus();document.getElementById("taskCalendarStartDisplay").select()');
     await send('Input.insertText',{text:key(tomorrow)+' 14:00'});
@@ -243,12 +271,24 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await evaluate('document.querySelectorAll(".schedule-block.google-overlap").length'),1);
     assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Added to Google Calendar/);
     assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").classList.contains("error")'),false);
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),false);
+    assert.equal(await evaluate('document.getElementById("calendarSuccessTitle").textContent'),'Main page capture');
+    assert.equal(await evaluate('document.getElementById("calendarSuccessLink").href'),'https://calendar.google.com/calendar/event?eid=test');
+    assert.match(await evaluate('document.getElementById("calendarSuccessTime").textContent'),/09:00.*10:00/);
+    assert.match(await evaluate('document.getElementById("calendarSuccessWarning").textContent'),/marked red/);
+    await click('languageToggle');
+    assert.match(await evaluate('document.getElementById("calendarSuccess").textContent'),/已成功添加到 Google 日历/);
+    await click('languageToggle');
+    assert.doesNotMatch(await evaluate('document.getElementById("calendarSuccess").textContent'),/[\u3400-\u9fff]/);
+    await click('calendarSuccessClose');
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),true);
     const syncedStart=await evaluate('JSON.parse(localStorage.getItem("forgeos:planner:v1")).tasks[0].googleEvent.start');
     failRead=true;await fillTask('Retry from main page',later);await click('saveTask');
     await until('!document.getElementById("taskFields").disabled && document.getElementById("taskCalendarFeedback").classList.contains("error")');
     assert.equal(writeCount,3);
     assert.equal(await evaluate('document.getElementById("taskTitle").value'),'Retry from main page');
     assert.equal(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),await evaluate('document.getElementById("taskCalendarFeedback").textContent'),'The API failure reason appears beside the submit button');
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),true,'Failed writes never show success');
     failRead=false;await click('saveTask');
     await until('!document.getElementById("taskFields").disabled && document.querySelectorAll(".task-google-status").length===2');
     assert.equal(writeCount,4);
@@ -270,6 +310,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     await fillTask('Local only task',later);
     await click('taskCalendarSync');await click('saveTask');
     assert.equal(writeCount,5,'Explicit local-only entry stays local');
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),true,'Local-only tasks never claim a Google write');
     assert.equal(await evaluate('JSON.parse(localStorage.getItem("forgeos:planner:v1")).tasks.length'),4);
     await click('generatePlan');
     assert.equal(await evaluate('document.getElementById("proposalContent").textContent.includes("Main page capture")'),false,'Google entries are not proposed for rescheduling');
@@ -286,6 +327,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(typeof releaseWrite,'function');
     assert.equal(await evaluate('document.getElementById("saveTask").matches(":disabled")'),true);
     assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Adding your task and syncing/);
+    assert.equal(await evaluate('document.getElementById("calendarSuccess").hidden'),true,'Pending writes never show success');
     releaseWrite();
     await until('!document.getElementById("taskFields").disabled && document.querySelectorAll(".task-google-status").length===4');
     assert.equal(writeCount,6);
@@ -293,6 +335,8 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(remoteEvents.work.at(-1).start.dateTime,exampleStart.toISOString());
     assert.equal(remoteEvents.work.at(-1).end.dateTime,new Date(exampleStart.getTime()+120*60000).toISOString());
     assert.match(await evaluate('document.getElementById("taskSubmitFeedback").textContent'),/Added to Google Calendar/);
+    assert.equal(await evaluate('document.querySelectorAll("#calendarSuccess:not([hidden])").length'),1,'Only one success notice is shown');
+    assert.equal(await evaluate('document.getElementById("calendarSuccessTitle").textContent'),'Corrected report example');
     for(const language of ['zh-CN','en']){
       if(await evaluate('document.documentElement.lang')!==language)await click('languageToggle');
       if(language==='en') assert.doesNotMatch(await evaluate('document.body.innerText'), /[\u3400-\u9fff]/, 'English interface contains no Chinese');
@@ -301,6 +345,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         for(const width of [320,375,768,1440]){
           await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<500});
           assert.equal(await evaluate('document.documentElement.scrollWidth>innerWidth+1'),false,'Main Schedule '+language+'/'+theme+'/'+width);
+          assert.equal(await evaluate('(()=>{const r=document.getElementById("calendarSuccess").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1&&r.top>=0&&r.bottom<=innerHeight+1;})()'),true,'Success notice fits the viewport');
         }
       }
     }
