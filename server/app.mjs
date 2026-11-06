@@ -8,6 +8,7 @@ import { GoogleOAuth } from './oauth.mjs';
 import { createGoogleTransport, NETWORK_ERRORS } from './google-transport.mjs';
 import { CalendarService, Journal } from './calendar-service.mjs';
 import { openGoogleAuthorization } from './external-browser.mjs';
+import { CodexService, CodexError } from './codex-service.mjs';
 
 const random = () => randomBytes(32).toString('base64url');
 const AUTH_ERRORS = new Set([...NETWORK_ERRORS, 'GOOGLE_AUTH_FAILED', 'GOOGLE_AUTH_NETWORK_FAILED', 'GOOGLE_AUTH_INVALID_RESPONSE',
@@ -27,6 +28,8 @@ export function createApp(config, dependencies = {}) {
   const service = dependencies.service || new CalendarService(new Journal(config.dataDirectory));
   const calendarFor = dependencies.calendarFor || (session => new GoogleCalendar(() => oauth.accessToken(session), transport.request));
   const sessions = new Map();
+  const codexSessions = new Map();
+  const codex = dependencies.codex || new CodexService(config);
   const openBrowser = dependencies.openBrowser || openGoogleAuthorization;
   let queue = Promise.resolve();
   const serialized = work => { const next = queue.then(work); queue = next.catch(() => {}); return next; };
@@ -38,6 +41,33 @@ export function createApp(config, dependencies = {}) {
       if (req.headers.host !== new URL(origin).host) throw new CalendarError('INVALID_HOST', 403);
       if (req.headers.origin && req.headers.origin !== origin) throw new CalendarError('INVALID_ORIGIN', 403);
       const url = new URL(req.url, origin), route = url.pathname;
+      if (route.startsWith('/api/codex/')) {
+        for (const [id, current] of codexSessions) if (current.expires < Date.now()) codexSessions.delete(id);
+        const id = /(?:^|;\s*)forgeos_codex=([A-Za-z0-9_-]+)/.exec(req.headers.cookie || '')?.[1];
+        let current = codexSessions.get(id);
+        if (route === '/api/codex/status' && req.method === 'GET') {
+          if (!current) {
+            if (codexSessions.size >= 100) throw new CodexError('TOO_MANY_SESSIONS', 429);
+            current = { id: random(), csrf: random(), expires: Date.now() + 8 * 3600000 };
+            codexSessions.set(current.id, current);
+            res.setHeader('Set-Cookie', `forgeos_codex=${current.id}; HttpOnly; SameSite=Strict; Path=/api/codex; Max-Age=28800`);
+          }
+          json(res, 200, { ...await codex.status(), csrf: current.csrf }); return;
+        }
+        if (!['/api/codex/test', '/api/codex/extract'].includes(route)) throw new CodexError('NOT_FOUND', 404);
+        if (req.method !== 'POST') throw new CodexError('METHOD_NOT_ALLOWED', 405);
+        if (!current) throw new CodexError('SESSION_REQUIRED', 401);
+        if (req.headers.origin !== origin || req.headers['x-forgeos-csrf'] !== current.csrf || !req.headers['content-type']?.startsWith('application/json')) throw new CodexError('CSRF_FAILED', 403);
+        const input = await body(req);
+        const controller = new AbortController();
+        const cancel = () => { if (!res.writableEnded) controller.abort(); };
+        res.on('close', cancel);
+        try {
+          const result = route.endsWith('/test') ? await codex.test({ signal: controller.signal }) : await codex.extract(input, { signal: controller.signal });
+          json(res, 200, result);
+        } finally { res.off('close', cancel); }
+        return;
+      }
       if (!route.startsWith('/api/')) {
         if (!['GET', 'HEAD'].includes(req.method)) throw new CalendarError('METHOD_NOT_ALLOWED', 405);
         let relative = decodeURIComponent(route);
@@ -140,8 +170,8 @@ export function createApp(config, dependencies = {}) {
       });
       json(res, 200, result);
     } catch (error) {
-      if (!res.headersSent) json(res, error instanceof CalendarError ? error.status : 500, {
-        error: error instanceof CalendarError ? error.code : 'SERVICE_ERROR', ...(error.completed ? { completed: error.completed } : {})
+      if (!res.headersSent) json(res, error instanceof CalendarError || error instanceof CodexError ? error.status : 500, {
+        error: error instanceof CalendarError || error instanceof CodexError ? error.code : 'SERVICE_ERROR', ...(error.completed ? { completed: error.completed } : {})
       }); else res.end();
     }
   });

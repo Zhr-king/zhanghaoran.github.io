@@ -11,6 +11,7 @@
   const validDeadline = value => typeof value === 'string' && value.length === 16 && validDate(value.slice(0, 10)) && validTime(value.slice(11)) && value[10] === 'T';
   let state = defaults(), proposal = null, editing = null, selectedDay = 0;
   let loadFailed = false, savingTask = false, taskMessage = null, calendarSuccess = null;
+  let extracting = false, extractionMessage = null;
   const requiredDetails = [
     { id: 'taskTitle', pair: ['任务名称', 'Task name'] },
     { id: 'taskDuration', pair: ['预计分钟', 'Minutes'] },
@@ -20,7 +21,7 @@
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (saved) {
-      if (!Array.isArray(saved.tasks) || !saved.tasks.every(task => typeof task.id === 'string' && typeof task.title === 'string' && task.title.trim() && task.title.length <= 300 && Number.isInteger(task.duration) && task.duration >= 15 && task.duration <= 720 && validDeadline(task.deadline) && ['normal', 'high'].includes(task.priority) && typeof task.done === 'boolean') ||
+      if (!Array.isArray(saved.tasks) || !saved.tasks.every(task => typeof task.id === 'string' && typeof task.title === 'string' && task.title.trim() && task.title.length <= 300 && Number.isInteger(task.duration) && task.duration >= 15 && task.duration <= 720 && validDeadline(task.deadline) && ['normal', 'high', null].includes(task.priority) && typeof task.done === 'boolean') ||
         !Array.isArray(saved.events) || !saved.events.every(event => typeof event.id === 'string' && typeof event.title === 'string' && validDate(event.date) && validTime(event.start) && validTime(event.end) && event.start < event.end) ||
         !Array.isArray(saved.schedule) || !saved.schedule.every(slot => saved.tasks.some(task => task.id === slot.taskId) && Number.isFinite(slot.start) && Number.isFinite(slot.end) && slot.start < slot.end) ||
         !saved.preferences || !validTime(saved.preferences.start) || !validTime(saved.preferences.end) || saved.preferences.start >= saved.preferences.end || !['morning', 'afternoon'].includes(saved.preferences.focus)) throw new Error('Invalid planner data');
@@ -39,6 +40,15 @@
     button.type = 'button'; button.addEventListener('click', handler); return button;
   }
   function notify(zh, en, error = false) { $('feedback').textContent = tr(zh, en); $('feedback').classList.toggle('error', error); }
+  function extractionStatus(pair, error = false) {
+    extractionMessage = pair ? { pair, error } : null;
+    renderExtractionStatus();
+  }
+  function renderExtractionStatus() {
+    $('extractionStatus').hidden = !extractionMessage;
+    $('extractionStatus').textContent = extractionMessage ? tr(...extractionMessage.pair) : '';
+    $('extractionStatus').classList.toggle('error', !!extractionMessage?.error);
+  }
   const taskInput = id => $(id + 'Display') || $(id);
   function markTaskField(id) {
     const input = taskInput(id);
@@ -202,7 +212,7 @@
       complete.setAttribute('aria-label', `${task.done ? tr('恢复任务：', 'Reopen task: ') : tr('完成任务：', 'Complete task: ')}${task.title}`);
       complete.setAttribute('aria-pressed', String(task.done));
       const body = node('div');
-      body.append(node('strong', task.title, 'task-name'), node('p', `${task.duration} ${tr('分钟', 'min')} · ${task.priority === 'high' ? tr('高优先级', 'High priority') : tr('普通', 'Normal')} · ${tr('截止 ', 'Due ')}${formatDate(task.deadline)} ${formatTime(task.deadline)}`, 'task-meta'));
+      body.append(node('strong', task.title, 'task-name'), node('p', `${task.duration} ${tr('分钟', 'min')} · ${task.priority === 'high' ? tr('高优先级', 'High priority') : task.priority === 'normal' ? tr('普通', 'Normal') : tr('优先级未指定', 'Priority not specified')} · ${tr('截止 ', 'Due ')}${formatDate(task.deadline)} ${formatTime(task.deadline)}`, 'task-meta'));
       const actions = node('div', undefined, 'task-actions');
       if (task.googleEvent) {
         body.append(node('span', task.googleOverlap ? tr('已同步 Google · 时间重叠', 'Synced to Google · time overlap') : tr('已同步 Google 日历', 'Synced to Google Calendar'), 'task-google-status' + (task.googleOverlap ? ' overlapping' : '')));
@@ -217,7 +227,7 @@
         if (savingTask) return;
         clearTaskFeedback();
         editing = task.id; $('taskTitle').value = task.title; $('taskDuration').value = task.duration;
-        $('taskPriority').value = task.priority; $('taskDeadline').value = task.deadline;
+        $('taskPriority').value = task.priority ?? ''; $('taskDeadline').value = task.deadline;
         $('saveTask').textContent = tr('保存修改', 'Save changes'); $('cancelEdit').hidden = false;
         calendar.setEditing(true);
         $('taskTitle').focus();
@@ -252,22 +262,45 @@
     $('plannedHours').replaceChildren(document.createTextNode((activeSlots().reduce((sum, slot) => sum + slot.end - slot.start, 0) / 3600000).toFixed(1) + ' '), node('small', 'h'));
     $('lastConfirmed').textContent = state.confirmedAt ? `${tr('上次确认：', 'Last confirmed: ')}${formatDate(state.confirmedAt)} ${formatTime(state.confirmedAt)}` : '';
     $('saveTask').textContent = editing ? tr('保存修改', 'Save changes') : tr('添加任务 ＋', 'Add task +');
-    $('naturalTask').placeholder = tr('明天下午5点前完成项目报告，需要2小时，高优先级', 'Finish the project report tomorrow by 17:00, 2 hours, high priority');
+    $('naturalTask').placeholder = tr('随意描述你的待办，例如：想抽半小时把课堂笔记整理一下', 'Describe your task freely, e.g. I want to spend half an hour tidying up my class notes');
     renderSchedule(); renderProposal(); renderTasks(); renderEvents();
-    calendar.render(); renderTaskFeedback(); renderCalendarSuccess();
+    calendar.render(); renderTaskFeedback(); renderCalendarSuccess(); renderExtractionStatus();
   }
   function generate(announce = true) {
     proposal = core.plan(state.tasks.filter(task => !task.googleEvent), state.events, state.preferences, new Date(), googleSlots());
     if (announce) notify('建议已生成，请检查后确认。', 'Proposal generated. Review it before confirming.');
     render();
   }
-  $('captureForm').addEventListener('submit', event => {
+  $('captureForm').addEventListener('submit', async event => {
     event.preventDefault();
-    if (savingTask) return;
+    if (savingTask || extracting) return;
     if (!$('naturalTask').value.trim()) return;
-    const parsed = core.parse($('naturalTask').value);
-    resetEditor(); $('taskTitle').value = parsed.title; $('taskDuration').value = parsed.duration ?? '';
-    $('taskDeadline').value = parsed.deadline; $('taskPriority').value = parsed.priority;
+    if (!window.ForgeAgent?.usesCodex || !window.ForgeCodex) {
+      const pair = ['请先连接 Codex 并设为默认智能体，再识别任务；也可以直接手动填写下方表单。', 'Connect Codex and set it as your default agent before extracting, or fill in the form manually.'];
+      extractionStatus(pair, true); notifyTask(...pair, true); return;
+    }
+    let parsed;
+    extracting = true;
+    const snapshot = JSON.stringify(Array.from($('taskForm').elements, input => [input.id, input.value, input.checked]));
+    const source = $('naturalTask').value;
+    const button = $('extractTask'); button.disabled = true; button.setAttribute('aria-busy', 'true');
+    extractionStatus(['Codex 正在理解你的描述…', 'Codex is understanding your description…']);
+    try {
+      parsed = (await window.ForgeCodex.extract(source)).task;
+      if (source !== $('naturalTask').value || snapshot !== JSON.stringify(Array.from($('taskForm').elements, input => [input.id, input.value, input.checked]))) {
+        const pair = ['你已修改输入，未覆盖当前表单。请重新识别。', 'Your input changed. The current form was preserved; extract again.'];
+        extractionStatus(pair); notifyTask(...pair); return;
+      }
+    } catch (error) {
+      const pair = window.ForgeCodex.errorPair(error);
+      extractionStatus(pair, true); notifyTask(...pair, true); return;
+    } finally { extracting = false; button.disabled = false; button.removeAttribute('aria-busy'); }
+    resetEditor(); $('taskTitle').value = parsed.title ?? ''; $('taskDuration').value = parsed.duration ?? '';
+    $('taskDeadline').value = parsed.deadline ?? ''; $('taskPriority').value = parsed.priority ?? '';
+    $('taskCalendarStart').value = parsed.start ?? '';
+    $('taskCalendarLocation').value = parsed.location ?? '';
+    $('taskCalendarDescription').value = parsed.notes ?? '';
+    extractionStatus(['已由 Codex 识别；未提及的信息保持空白，请核对后添加。', 'Extracted by Codex. Unmentioned details stay empty; review before adding.']);
     calendarSuccess = null; renderCalendarSuccess();
     if (!requireTaskDetails()) notifyTask('已填写识别到的信息，请核对后添加。', 'Recognized details are filled in. Review them before adding.');
   });
@@ -298,7 +331,7 @@
   $('taskForm').addEventListener('change', updateTaskRequirements);
   $('taskForm').addEventListener('submit', async event => {
     event.preventDefault();
-    if (savingTask) return;
+    if (savingTask || extracting) return;
     calendarSuccess = null; renderCalendarSuccess();
     if (requireTaskDetails()) return;
     const title = $('taskTitle').value.trim(), duration = Number($('taskDuration').value), deadline = $('taskDeadline').value;
@@ -309,7 +342,7 @@
     if (!validDeadline(deadline) || new Date(deadline).getTime() <= Date.now()) {
       return notifyTask('截止时间需晚于当前时间，请调整截止日期或时间。', 'The deadline must be in the future. Update its date or time.', true, 'taskDeadline');
     }
-    const task = { id: editing || crypto.randomUUID(), title, duration, deadline, priority: $('taskPriority').value, done: state.tasks.find(task => task.id === editing)?.done || false };
+    const task = { id: editing || crypto.randomUUID(), title, duration, deadline, priority: $('taskPriority').value || null, done: state.tasks.find(task => task.id === editing)?.done || false };
     if (!editing && $('taskCalendarSync').checked) {
       const start = new Date($('taskCalendarStart').value).getTime(), end = start + duration * 60000;
       if (!validDeadline($('taskCalendarStart').value) || !Number.isFinite(start) || start <= Date.now()) {

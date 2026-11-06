@@ -25,9 +25,9 @@
   <main class="planner-shell agent-shell" id="agentWorkspace">
     <section class="planner-intro">
       <div><p class="eyebrow">SCHEDULE / YOUR AGENTS</p><h1 data-i18n-en="Your agents. Your choice.">你的智能体，由你选择。</h1><p class="intro-copy" data-i18n-en="Sign in to your agents, then choose a default for Schedule.">登录智能体，再为 Schedule 选择你的默认助手。</p></div>
-      <div class="intro-side"><span class="prototype-badge" data-i18n-en="FRONTEND DEMO">前端演示</span><button type="button" class="module-guide-help" data-open-guide hidden data-i18n-en="Quick guide">使用指引</button></div>
+      <div class="intro-side"><span class="prototype-badge" data-i18n-en="LOCAL CODEX">本机 Codex</span><button type="button" class="module-guide-help" data-open-guide hidden data-i18n-en="Quick guide">使用指引</button></div>
     </section>
-    <div class="agent-preview-notice"><span aria-hidden="true">✦</span><p data-i18n-en="Try demo sign-in and default selection. These states are saved only in this browser; real account authorization is not connected.">体验演示登录与默认选择。状态仅保存在当前浏览器，尚未接入真实账号授权。</p></div>
+    <div class="agent-preview-notice"><span aria-hidden="true">✦</span><p data-i18n-en="Codex uses your local CLI login. Verify the connection, then choose it as your default. If needed, run codex login in a terminal first. Other providers are demos.">Codex 复用本机 CLI 登录，验证连接后即可设为默认。尚未登录时，请先在终端运行 codex login。其他智能体仍为演示。</p></div>
     <p class="agent-form-feedback" id="agentFeedback" role="status" aria-live="polite"></p>
     <div class="agent-settings-layout">
       <section class="planner-panel agent-settings-panel" aria-label="智能体管理" data-i18n-label-en="Agent management">
@@ -46,15 +46,15 @@
           </div>
           <form id="defaultAgentForm" hidden>
             <fieldset class="agent-account-fieldset"><legend class="agent-sr-only" data-i18n-en="Signed-in agents">已登录的智能体</legend><div id="signedInAccounts"></div></fieldset>
-            <div class="agent-form-actions"><button class="primary-btn" id="saveDefaultAgent" type="submit" disabled data-i18n-en="Save default agent">保存默认智能体</button><button class="text-btn" id="clearDefaultAgent" type="button" hidden data-i18n-en="Clear default">取消默认选择</button></div>
-            <p class="field-help" data-i18n-en="Demo accounts only. Schedule continues to use local planning rules.">当前为演示账号，Schedule 仍使用本地规则规划。</p>
+            <div class="agent-form-actions"><button class="primary-btn" id="saveDefaultAgent" type="submit" disabled data-i18n-en="Save default agent">保存默认智能体</button><a class="secondary-btn" id="backToSchedule" href="./" data-i18n-en="← Back to Schedule">← 返回 Schedule</a><button class="text-btn" id="clearDefaultAgent" type="button" hidden data-i18n-en="Clear default">取消默认选择</button></div>
+            <p class="field-help" data-i18n-en="Default Codex understands your description and extracts only mentioned details. Other providers are demos and do not perform AI extraction.">默认 Codex 理解你的描述，只填写提及的信息。其他智能体为演示账号，不提供 AI 识别。</p>
           </form>
         </section>
         <section id="loginPanel" role="tabpanel" aria-labelledby="loginTab" hidden>
           <div class="agent-section-heading"><h2 data-i18n-en="Choose an agent to sign in">选择要登录的智能体</h2><span class="agent-count" data-i18n-en="5 providers">5 个选项</span></div>
           <p class="agent-description" data-i18n-en="Keep multiple agents signed in. Choose your default separately.">可以同时登录多个智能体，再单独选择你偏好的默认账号。</p>
           <div class="agent-provider-grid" id="agentProviderList"></div>
-          <p class="field-help" data-i18n-en="Sign-in is simulated for this frontend demo. No password or API key is needed.">此处为前端演示登录，无需填写密码或 API Key。</p>
+          <p class="field-help" data-i18n-en="Connection verification sends a small request to Codex. Credentials stay with the local CLI; this page does not ask for passwords or API keys.">验证连接会向 Codex 发送一次简短请求。凭据由本机 CLI 管理，页面无需填写密码或 API Key。</p>
         </section>
       </section>
       <aside class="agent-info-column">
@@ -62,12 +62,12 @@
           <p class="eyebrow">YOUR DEFAULT</p><h2 data-i18n-en="Schedule's planning partner">Schedule 的规划搭档</h2>
           <div class="agent-current"><span class="agent-provider-mark" id="defaultAgentMark" aria-hidden="true">✦</span><div><strong id="defaultAgentName"></strong><span class="agent-state" data-agent-state data-state="disconnected"></span></div></div>
           <p class="agent-description" id="defaultAgentDescription"></p>
-          <div class="agent-account-total"><span data-i18n-en="Signed-in agents (demo)">已登录智能体（演示）</span><strong id="accountTotal">0 / 5</strong></div>
+          <div class="agent-account-total"><span data-i18n-en="Selected accounts">已添加账号</span><strong id="accountTotal">0 / 5</strong></div>
           <button class="secondary-btn full-width" id="manageLogins" type="button" data-i18n-en="Manage sign-ins →">管理登录 →</button>
         </section>
         <section class="planner-panel agent-guide-panel">
           <p class="eyebrow">A SIMPLE FLOW</p>
-          <ol class="agent-steps"><li><span>01</span><div><strong data-i18n-en="Sign in to an agent">登录智能体</strong><small data-i18n-en="Choose one of the five providers">从五个智能体中选择</small></div></li><li><span>02</span><div><strong data-i18n-en="Make it your default">设为默认智能体</strong><small data-i18n-en="Switch between signed-in accounts">随时在已登录账号间切换</small></div></li><li><span>03</span><div><strong data-i18n-en="Return to your schedule">返回你的日程</strong><small data-i18n-en="Continue planning with local rules">继续体验本地时间规划</small></div></li></ol>
+          <ol class="agent-steps"><li><span>01</span><div><strong data-i18n-en="Connect Codex">连接 Codex</strong><small data-i18n-en="Verify your local CLI login">验证本机 CLI 登录</small></div></li><li><span>02</span><div><strong data-i18n-en="Make it your default">设为默认智能体</strong><small data-i18n-en="Save your preferred account">保存你偏好的账号</small></div></li><li><span>03</span><div><strong data-i18n-en="Return to your schedule">返回你的日程</strong><small data-i18n-en="Extract task details and review">识别任务信息并核对</small></div></li></ol>
           <a class="agent-return-link" href="./" data-i18n-en="Open Schedule →">打开 Schedule →</a>
         </section>
       </aside>
@@ -87,7 +87,8 @@
   </dialog>
   <script src="../assets/js/i18n.js?v=20261010"></script>
   <script src="../assets/js/ui.js?v=20261011c"></script>
-  <script src="../assets/js/agent-settings.js?v=20261011d"></script>
+  <script src="../assets/js/codex-client.js?v=20261104"></script>
+  <script src="../assets/js/agent-settings.js?v=20261104"></script>
   <script src="../assets/js/onboarding.js?v=20261013b"></script>
 </body>
 </html>

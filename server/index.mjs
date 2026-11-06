@@ -15,6 +15,9 @@ if (redirectUri !== origin + '/api/calendar/oauth/callback') throw new Error('GO
 const dataDirectory = path.resolve(process.env.FORGEOS_DATA_DIR || path.join(os.homedir(), '.forgeos', 'calendar'));
 if (dataDirectory === root || dataDirectory.startsWith(root + path.sep)) throw new Error('FORGEOS_DATA_DIR must be outside the website directory.');
 const config = { root, dataDirectory, redirectUri, clientId: process.env.GOOGLE_CLIENT_ID || '', clientSecret: process.env.GOOGLE_CLIENT_SECRET || '', proxyUrl: process.env.GOOGLE_PROXY_URL?.trim() || 'auto' };
+config.codexBinary = process.env.FORGEOS_CODEX_BIN?.trim() || '';
+config.codexModel = process.env.FORGEOS_CODEX_MODEL?.trim() || '';
+config.codexProxyUrl = process.env.FORGEOS_CODEX_PROXY_URL?.trim() || 'auto';
 const server = createApp(config);
 server.on('error', error => { console.error('Local service could not start: ' + error.code); process.exitCode = 1; });
 server.listen(port, '127.0.0.1', () => {

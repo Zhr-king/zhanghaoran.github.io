@@ -27,18 +27,20 @@ Windows 本地使用：在项目文件夹双击 [ForgeOS.vbs](ForgeOS.vbs)，会
 
 分享图源文件为 `assets/images/social-card.svg`，发布使用同目录下的 PNG。执行 `node tests/language.cjs --render-social` 可重新生成 1200×630 分享图并运行检查。
 
-动态时间规划原型位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持自然语言规则识别、任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。该本地原型尚未连接 AI 智能体；中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
+动态时间规划位于 `/planner/`，可从首页“动态时间规划”卡片进入。支持任务编辑、固定安排、七天排程建议、冲突提示、用户确认、延长任务后重排，以及本机浏览器保存。已接入本机 Codex 的真实连接验证与自然语言任务提取；七天排程仍使用本地算法。中文字体回退到系统中文字体，英文使用 Calibri（如果已安装）。运行 `node tests/planner.cjs` 检查排程规则。
 
-Schedule 主页面 `/planner/` 的「有什么待办？」已接入 Google 日历：在同一页面授权、选择日历，填写开始时间和预计时长，点击「添加任务并同步日历」即可同时加入待办和真实日历。默认勾选同步，取消可仅保存本地；失败保留草稿，重试避免重复创建。旧 `/planner/calendar.html` 保留为独立入口。配置 Google OAuth 后通过本地服务连接标准 Google Calendar API，个人 Google 账号即可使用，无需 Workspace 订阅或 MCP 预览资格。录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间，也未连接真实 AI 模型。双击 `ForgeOS.vbs`，或运行 `npm start`，打开 `http://127.0.0.1:8787/planner/`；首次配置见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。自动化测试使用模拟日历；真实账号的授权、录入与读回已于 2026-10-22 验证。
+Schedule 主页面 `/planner/` 的「有什么待办？」已接入 Google 日历：在同一页面授权、选择日历，填写开始时间和预计时长，点击「添加任务并同步日历」即可同时加入待办和真实日历。默认勾选同步，取消可仅保存本地；失败保留草稿，重试避免重复创建。旧 `/planner/calendar.html` 保留为独立入口。配置 Google OAuth 后通过本地服务连接标准 Google Calendar API，个人 Google 账号即可使用，无需 Workspace 订阅或 MCP 预览资格。录入指定时间、事件和备注；重叠也会创建，并把新事件在 Google 日历中标红。此功能不自动调整时间；Codex 提取的信息须先在表单中核对再提交。双击 `ForgeOS.vbs`，或运行 `npm start`，打开 `http://127.0.0.1:8787/planner/`；首次配置见 [Google Calendar 接入说明](docs/GOOGLE_CALENDAR_MCP.md)。自动化测试使用模拟日历；真实账号的授权、录入与读回已于 2026-10-22 验证。
 
 本地运行 `python -m http.server 5500 --bind 127.0.0.1`，打开 `http://127.0.0.1:5500/planner/` 即可体验。也可使用 VS Code 的“预览网页”任务。
 
-Schedule 的 Extract task details 仅填写本地规则明确识别到的信息，不再为缺失的时长、日期和时间自动补默认值。任务名称、预计分钟、截止日期和时间必填；同步 Google 日历还需要开始日期和时间。缺失项目会一次列出，可点击跳到对应字段，补齐后再提交；地点和备注选填。Google 确认创建成功后，页面显示一张可关闭的成功卡片，包含任务名称、实际起止时间和日程链接；发生重叠时提示新日程已标红。提交中、失败或仅保存本地任务时不会显示 Google 成功卡片。
+Schedule 的 Extract task details 只调用已选为默认的 Codex 理解自由描述，无需套模板，不再回退到本地规则。未连接时提示连接，失败时保留输入。没提及或不明确的字段保持空白，优先级不再默认填「普通」；后端要求填写的字段带有原文依据，无依据的值置空。任务名称、预计分钟、截止日期和时间必填；同步 Google 日历还需要开始日期和时间。缺失项目会一次列出，可点击跳到对应字段，补齐后再提交；优先级、地点和备注选填。Google 确认创建成功后，页面显示一张可关闭的成功卡片，包含任务名称、实际起止时间和日程链接；发生重叠时提示新日程已标红。提交中、失败或仅保存本地任务时不会显示 Google 成功卡片。
 
 页面设计样板位于 `/planner/template.html`，采用深蓝、冰蓝和青色的工作台布局，支持中英文、明暗主题、日期切换与示例任务勾选。样板使用独立的展示数据，不读取或修改真实规划任务，也不保存示例操作。入口位于规划页标题旁的辅助操作区，与“试用示例任务”放在一起。
 
-智能体账号页位于 `/planner/agent.html`，工作台及样板页提供“选择默认智能体”和“登录智能体”两个入口。前端仅展示 Codex、Claude、Gemini、DeepSeek V4、Kimi；支持演示登录、从已登录账号中保存或切换默认智能体、取消默认及退出。状态保存在独立的 `forgeos:agent-accounts:v1` 本机存储项中。登录不会自动设置默认，退出默认账号会清除默认选择。当前为纯前端演示，无需密码或 API Key，未接入真实授权或智能体调用，Schedule 仍使用本地规则。旧服务配置不作为登录状态读取。
+智能体账号页位于 `/planner/agent.html`。Codex 复用本机 CLI 登录并通过真实请求验证连接，验证后可单独保存为默认；Schedule 顶部的「连接 Codex」则在验证成功后直接选为默认。Claude、Gemini、DeepSeek V4、Kimi 仍为演示。浏览器仅保存账号选择，真实可用状态来自后端；旧 Codex 演示登录不会被当作连接成功。取消默认或移除浏览器连接选择不会注销本机 CLI。操作、网络设置、测试与限制见 [Codex 接入说明](docs/CODEX_SCHEDULE.md)。已有本地服务需重启以加载新接口。
 
 学习知识库位于 `/knowledge/`，采用左侧历史会话、右侧对话内容和底部输入框的布局。支持新建、切换、搜索、重命名及删除对话，Enter 发送、Shift + Enter 换行；手机端历史记录为抽屉。首次使用没有预置科目、笔记或会话，由用户自行添加。科目和文档在弹窗内管理，支持 Markdown/TXT 导入、文档说明、阅读与回忆复习、学习记录及 Markdown 导出。目前尚未连接 Obsidian 或 AI；发送消息会检索本地笔记，并明确标注结果来源。笔记保存在 `forgeos:knowledge:v1`，会话独立保存在 `forgeos:knowledge-chats:v1`，删除会话不会删除文档；切换会话时保留未发送的草稿，草稿在刷新后不保留。单份文档限制为 200 KB、50,000 字，最多 50 个科目、200 份笔记及 100 个会话，每个会话最多 100 轮。运行 `node tests/knowledge-browser.cjs` 检查聊天、本地保存、中英文主题及响应式布局。
+
+History 教材整理规则包位于 [server/skills/history-textbook/SKILL.md](server/skills/history-textbook/SKILL.md)，包含老师的原始规则副本、五类笔记范本及 [输入与输出约定](server/skills/history-textbook/references/input-output.md)。用于后续由网站后端显式交给 Codex 或其他兼容 Agent 读取；目前仅完成规则包整理，尚未安装为个人 Codex 技能，也未接通 PDF 上传、解析、后台任务或自动生成。教材原文与已有笔记未复制到网站项目。
 
 独立页面的后续安排见 [页面规划](docs/SITE_PLAN.md)。当前 `sitemap.xml` 收录已存在的首页、时间规划页和学习知识库；修改域名时请同步更新 CNAME、canonical、分享地址、结构化数据、robots.txt 和 sitemap.xml。

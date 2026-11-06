@@ -32,13 +32,13 @@
     agents: {
       name: ['智能体账号', 'AGENT ACCOUNTS'],
       title: ['为规划，选一个搭档。', 'Choose your planning partner.'],
-      intro: ['先体验账号管理，再选择默认助手。', 'Try account management, then choose your default assistant.'],
+      intro: ['连接本机 Codex，再选择默认助手。', 'Connect local Codex, then choose your default assistant.'],
       icons: ['person', 'check', 'calendar'],
-      artLabels: [['你的默认助手', 'YOUR DEFAULT'], ['选择权，在你手中', 'Your agent. Your choice.'], ['演示', 'DEMO']],
+      artLabels: [['你的默认助手', 'YOUR DEFAULT'], ['选择权，在你手中', 'Your agent. Your choice.'], ['Codex', 'CODEX']],
       steps: [
-        [['认识你的搭档', 'Choose an agent'], ['在「登录智能体」中选择服务，体验演示登录，无需密码。', 'Open Sign in and pick a provider. Try a demo account, no password needed.']],
+        [['认识你的搭档', 'Choose an agent'], ['在「登录智能体」中验证 Codex 连接，复用本机登录。其他服务为演示。', 'Verify Codex using your local CLI login. Other providers are demos.']],
         [['选为默认助手', 'Make it your default'], ['选中已登录的账号并保存。默认由你决定，不会自动切换。', 'Select a signed-in account and save it as your default. You make the choice.']],
-        [['回到你的日程', 'Back to your day'], ['返回 Schedule 继续规划。当前为前端演示，排程仍用本地规则。', 'Return to Schedule. This is a frontend demo; plans still use local rules.']]
+        [['回到你的日程', 'Back to your day'], ['返回 Schedule，让 Codex 识别任务信息，核对后再添加。', 'Return to Schedule, extract task details with Codex, then review before adding.']]
       ],
       target: '[data-agent-tab][aria-selected="true"]'
     }

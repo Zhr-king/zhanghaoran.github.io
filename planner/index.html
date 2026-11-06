@@ -51,8 +51,8 @@
     </section>
     <section class="agent-connection-banner" aria-labelledby="agentBannerTitle">
       <span class="agent-glyph" data-agent-default-mark aria-hidden="true">✦</span>
-      <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="Task extraction uses local rules. Connect Google Calendar below to add reviewed tasks directly to your calendar.">任务识别暂用本地规则。连接下方 Google 日历，核对任务和时间后即可直接录入日程。</p></div>
-      <div class="agent-entry-actions"><a class="agent-connect-link" href="agent.html#default" data-i18n-en="Choose default">选择默认智能体</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div>
+      <div class="agent-banner-copy"><div class="agent-banner-title"><h2 id="agentBannerTitle" data-i18n-en="Your planning agent">你的规划智能体</h2><span class="agent-state" data-agent-state data-state="disconnected" role="status" data-i18n-en="Not connected">未连接</span></div><p data-i18n-en="Connect Codex to understand your task description. Only details you mention are filled in; review them before adding to Google Calendar.">连接 Codex 理解你的任务描述，只填写你提及的信息，核对后再添加到 Google 日历。</p><p id="agentFeedback" class="agent-form-feedback" role="status" aria-live="polite"></p></div>
+      <div class="agent-entry-actions"><button class="agent-connect-link" id="connectCodex" type="button" data-i18n-en="Connect Codex">连接 Codex</button><a class="agent-connect-link secondary" href="agent.html#default" data-i18n-en="Choose default">选择默认智能体</a><a class="agent-connect-link secondary" href="agent.html#login" data-i18n-en="Sign in →">登录智能体 →</a></div>
     </section>
     <noscript><p class="prototype-note">请启用 JavaScript 使用任务和排程功能。 Enable JavaScript to use the planner.</p></noscript>
     <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
@@ -80,9 +80,10 @@
           </div>
           <form id="captureForm">
             <label for="naturalTask" data-i18n-en="Describe your task">用一句话描述任务</label>
-            <textarea id="naturalTask" rows="3" maxlength="300" required placeholder="明天下午5点前完成项目报告，需要2小时，高优先级" data-i18n-placeholder-en="Finish the project report tomorrow by 17:00, 2 hours, high priority"></textarea>
-            <p class="field-help" data-i18n-en="Recognizes dates, times and durations using local rules. Unrecognized details stay empty; complete them below before adding.">按本地规则识别日期、时间和时长；未识别的信息会留空，请在下方补全后添加。</p>
-            <button class="secondary-btn full-width" type="submit" data-i18n-en="Extract task details ↓">识别任务信息 ↓</button>
+            <textarea id="naturalTask" rows="3" maxlength="300" required placeholder="随意描述你的待办，例如：想抽半小时把课堂笔记整理一下" data-i18n-placeholder-en="Describe your task freely, e.g. I want to spend half an hour tidying up my class notes"></textarea>
+            <p class="field-help" data-i18n-en="Describe it in your own words—no template needed. Your default Codex extracts the details; anything unmentioned or unclear stays empty, including priority.">用自己的话描述即可，无需套模板。由默认 Codex 识别，没提到或不明确的信息保持空白，包括优先级。</p>
+            <button class="secondary-btn full-width" id="extractTask" type="submit" data-i18n-en="Extract task details ↓">识别任务信息 ↓</button>
+            <p id="extractionStatus" class="agent-form-feedback" role="status" aria-live="polite" hidden></p>
           </form>
           <form id="taskForm" class="task-form">
             <fieldset id="taskFields">
@@ -91,7 +92,7 @@
             <label for="taskTitle" data-i18n-en="Task name">任务名称</label><input id="taskTitle" maxlength="300" required>
             <div class="form-row">
               <div><label for="taskDuration" data-i18n-en="Minutes">预计分钟</label><input id="taskDuration" type="number" min="15" max="720" step="1" required></div>
-              <div><label for="taskPriority" data-i18n-en="Priority">优先级</label><select id="taskPriority"><option value="normal" data-i18n-en="Normal">普通</option><option value="high" data-i18n-en="High">高</option></select></div>
+              <div><label for="taskPriority" data-i18n-en="Priority (optional)">优先级（选填）</label><select id="taskPriority"><option value="" data-i18n-en="Not specified">未指定</option><option value="normal" data-i18n-en="Normal">普通</option><option value="high" data-i18n-en="High">高</option></select></div>
             </div>
             <label for="taskDeadline" data-i18n-en="Deadline (local time)">截止时间（本地时间）</label><input id="taskDeadline" type="datetime-local" required>
             <label class="task-calendar-toggle" for="taskCalendarSync"><input id="taskCalendarSync" type="checkbox" checked><span data-i18n-en="Also add to Google Calendar">同时添加到 Google 日历</span></label>
@@ -172,8 +173,9 @@
   <script src="../assets/js/planner-core.js?v=20261024"></script>
   <script src="../assets/js/calendar-connection.js?v=20261022b"></script>
   <script src="../assets/js/planner-calendar.js?v=20261022b"></script>
-  <script src="../assets/js/planner.js?v=20261024"></script>
-  <script src="../assets/js/agent-settings.js?v=20261019"></script>
+  <script src="../assets/js/codex-client.js?v=20261104"></script>
+  <script src="../assets/js/planner.js?v=20261105"></script>
+  <script src="../assets/js/agent-settings.js?v=20261104"></script>
   <script src="../assets/js/onboarding.js?v=20261013b"></script>
   <script src="../assets/js/date-inputs.js?v=20261022"></script>
 </body>

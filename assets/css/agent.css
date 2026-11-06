@@ -2,6 +2,7 @@
 .agent-state { display: inline-flex; align-items: center; gap: 7px; padding: 4px 9px; max-width: 100%; border: 1px solid var(--line); border-radius: 20px; color: var(--text-dim); font-size: calc(11px * var(--text-scale)); line-height: 1.5; }
 .agent-state::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .agent-state[data-state="demo"] { color: var(--sky); background: rgba(59, 130, 246, .08); border-color: var(--line-strong); }
+.agent-state[data-state="connected"] { color: var(--cyan); background: rgba(34, 211, 238, .08); border-color: var(--line-strong); }
 .agent-glyph { display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 12px; border: 1px solid var(--line-strong); background: linear-gradient(145deg, rgba(59, 130, 246, .18), rgba(34, 211, 238, .06)); color: var(--sky); font-size: 23px; }
 .agent-connection-banner { display: flex; align-items: center; gap: 16px; padding: 18px 20px; margin-bottom: 8px; background: linear-gradient(110deg, rgba(37, 99, 235, .1), rgba(34, 211, 238, .035)); border: 1px solid var(--line-strong); border-radius: 12px; }
 .agent-banner-copy { flex: 1; min-width: 0; }
